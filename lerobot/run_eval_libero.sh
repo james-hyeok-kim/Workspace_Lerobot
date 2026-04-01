@@ -37,7 +37,7 @@ POLICY_TYPE="pi05"
 if [ "$TEST_MODE" -eq 1 ]; then
     echo "⚠️ [TEST MODE] 활성화 (로그: $LOG_DIR)"
     CATEGORIES=("libero_spatial")
-    EPISODES=20      # Core 커맨드 기준
+    EPISODES=1      # Core 커맨드 기준
     ACTION_STEPS=10  # Core 커맨드 기준
 else
     echo "🚀 [FULL MODE] 활성화 (로그: $LOG_DIR)"
