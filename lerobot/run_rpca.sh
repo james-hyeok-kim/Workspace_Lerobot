@@ -7,7 +7,7 @@
 #   SCHEMES="int4_w int4_wa" bash run_rpca.sh → 스킴 직접 지정 (FULL 모드 기반)
 
 # ── 경로 설정 ─────────────────────────────────────────────────────────────────
-BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASE_DIR="$(pwd)"
 LEROBOT_DIR="${BASE_DIR}"
 MODEL_OPT_DIR="${BASE_DIR}/../TensorRT-Model-Optimizer"
 
@@ -25,7 +25,7 @@ fi
 
 # ── 모드 설정 ─────────────────────────────────────────────────────────────────
 # TEST_MODE: 1 또는 true → TEST MODE, 그 외 → FULL MODE
-TEST_MODE="${TEST_MODE:-0}"
+TEST_MODE=0
 
 MODEL_ID="lerobot/pi05_libero_finetuned"
 TASK="libero_10"

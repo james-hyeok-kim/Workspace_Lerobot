@@ -94,6 +94,22 @@ def main():
     output_path = Path(args.output_json)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # 0. Skip if result already exists
+    if output_path.exists():
+        print(f"[SKIP] 결과 파일이 이미 존재합니다 → {output_path}")
+        try:
+            with open(output_path, encoding="utf-8") as _f:
+                _existing = json.load(_f)
+            _agg = _existing.get("eval_results", {}).get("aggregated", {})
+            _qc  = _existing.get("quantization", {})
+            print(f"[SKIP] task={_existing.get('config',{}).get('task','?')}  "
+                  f"success={_agg.get('pc_success', float('nan')):.1f}%  "
+                  f"reward={_agg.get('avg_sum_reward', float('nan')):.4f}  "
+                  f"quant={_qc.get('quantized_count','?')}/{_qc.get('total_leaf_modules','?')}")
+        except Exception as _e:
+            print(f"[SKIP] 기존 JSON 읽기 실패: {_e}")
+        return
+
     # 1. Load policy config from Hub / local path
     print(f"[INFO] Loading policy config from: {args.pretrained_path}")
     policy_cfg = PreTrainedConfig.from_pretrained(args.pretrained_path)

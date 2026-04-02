@@ -634,6 +634,50 @@ def disable_torch_compile(policy: nn.Module) -> None:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Summary 저장 헬퍼
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _write_summary(
+    output_dir: Path,
+    args,
+    suite_name: str,
+    task_id: int,
+    all_results: dict,
+) -> Path:
+    """all_results를 rpca_summary.json으로 저장하고 경로를 반환."""
+    # 성공률 기준 ranking (nan은 마지막)
+    ranking = sorted(
+        [
+            {"scheme": s, "pc_success": r["pc_success"], "avg_sum_reward": r["avg_sum_reward"]}
+            for s, r in all_results.items()
+        ],
+        key=lambda x: (float("nan") if x["pc_success"] != x["pc_success"] else -x["pc_success"]),
+    )
+
+    summary = {
+        "config": {
+            "pretrained_path": args.pretrained_path,
+            "task": args.task,
+            "suite_name": suite_name,
+            "task_id": task_id,
+            "n_episodes": args.n_episodes,
+            "batch_size": args.batch_size,
+            "rpca_rank": args.rpca_rank,
+            "rpca_lam_scale": args.rpca_lam_scale,
+            "max_rpca_dim": args.max_rpca_dim,
+            "device": args.device,
+            "schemes": args.schemes,
+        },
+        "ranking": ranking,
+        "results": all_results,
+    }
+    summary_path = output_dir / "rpca_summary.json"
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2, default=str)
+    return summary_path
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -686,6 +730,29 @@ def main():
         print(f"\n{'='*60}")
         print(f"[SCHEME] {scheme}")
         print(f"{'='*60}")
+
+        # ── Skip: 이미 결과 JSON이 있으면 로드 후 건너뜀 ──────────────────────
+        out_path = output_dir / f"rpca_{scheme}.json"
+        if out_path.exists():
+            print(f"[SKIP] {scheme}: 이미 존재 → {out_path}")
+            try:
+                with open(out_path, encoding="utf-8") as _f:
+                    _existing = json.load(_f)
+                _agg = _existing.get("eval_results", {}).get("aggregated", {})
+                _tot = _existing.get("quantization", {}).get("totals", {})
+                all_results[scheme] = {
+                    "pc_success":    _agg.get("pc_success",    float("nan")),
+                    "avg_sum_reward": _agg.get("avg_sum_reward", float("nan")),
+                    "quant_rpca":    _tot.get("quant_rpca",    0),
+                    "quant_direct":  _tot.get("quant_direct",  0),
+                    "not_quant":     _tot.get("not_quant",     0),
+                    "total_linear":  _tot.get("total",         0),
+                    "skipped":       True,
+                }
+            except Exception as _e:
+                print(f"[WARN] 기존 JSON 로드 실패 ({_e}), 재실행합니다.")
+            else:
+                continue
 
         # ── 정책 로드 ──────────────────────────────────────────────────────────
         policy_cfg = PreTrainedConfig.from_pretrained(args.pretrained_path)
@@ -783,34 +850,30 @@ def main():
             "quant_direct": n_direct,
             "not_quant": n_not,
             "total_linear": totals["total"],
+            "skipped": False,
         }
 
         # 메모리 정리
         del policy
         torch.cuda.empty_cache()
 
+        # ── 스킴 완료 직후 summary 중간 저장 (부분 실행 시에도 보존) ──────────
+        _write_summary(output_dir, args, suite_name, task_id, all_results)
+
     env.close()
 
-    # ── 요약 JSON ──────────────────────────────────────────────────────────────
-    summary = {
-        "config": vars(args),
-        "suite_name": suite_name,
-        "task_id": task_id,
-        "results": all_results,
-    }
-    summary_path = output_dir / "rpca_summary.json"
-    with open(summary_path, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2, default=str)
+    # ── 최종 summary 저장 & 출력 ──────────────────────────────────────────────
+    summary_path = _write_summary(output_dir, args, suite_name, task_id, all_results)
 
-    # ── 최종 요약 출력 ─────────────────────────────────────────────────────────
     W = 74
     print(f"\n{'═'*W}")
     print("[FINAL SUMMARY]")
-    print(f"  {'Scheme':<15} {'Success':>8} {'Reward':>8} {'Total':>7} {'RPCA':>7} {'Direct':>8} {'NotQ':>6}")
+    print(f"  {'Scheme':<15} {'Success':>8} {'Reward':>8} {'Total':>7} {'RPCA':>7} {'Direct':>8} {'NotQ':>6} {'Skip':>5}")
     print(f"  {'─'*(W-2)}")
     for s, r in all_results.items():
+        skip_tag = " (skip)" if r.get("skipped") else ""
         print(f"  {s:<15} {r['pc_success']:>7.1f}% {r['avg_sum_reward']:>8.4f} "
-              f"{r['total_linear']:>7} {r['quant_rpca']:>7} {r['quant_direct']:>8} {r['not_quant']:>6}")
+              f"{r['total_linear']:>7} {r['quant_rpca']:>7} {r['quant_direct']:>8} {r['not_quant']:>6}{skip_tag}")
     print(f"[INFO] Summary: {summary_path}")
     print(f"{'═'*W}")
 
