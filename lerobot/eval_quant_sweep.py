@@ -168,10 +168,23 @@ DIT_PATTERNS = [
     "model.time_mlp_in",
     "model.time_mlp_out",
 ]
+# LM + DiT expert만 (Vision, Action Head 제외)
+LM_DIT_PATTERNS = [
+    "paligemma_with_expert.paligemma.model.language_model",
+    "paligemma_with_expert.paligemma.model.multi_modal_projector",
+    "paligemma_with_expert.gemma_expert",
+]
 # Vision tower는 fp32 고정이라 all에서도 skip
 SKIP_PATTERNS = [
     "vision_tower",
     "embed_tokens",
+]
+# Action Head: lm_dit 타겟에서 제외
+ACTION_HEAD_PATTERNS = [
+    "model.action_in_proj",
+    "model.action_out_proj",
+    "model.time_mlp_in",
+    "model.time_mlp_out",
 ]
 
 
@@ -186,6 +199,9 @@ def _is_target_layer(full_name: str, target: str) -> bool:
         return any(pat in full_name for pat in LM_PATTERNS)
     elif target == "dit":
         return any(pat in full_name for pat in DIT_PATTERNS)
+    elif target == "lm_dit":
+        # Vision + Action Head 제외, LM + Expert만
+        return any(pat in full_name for pat in LM_DIT_PATTERNS)
     elif target == "all":
         return True  # skip 이외 모두
     return False
@@ -292,6 +308,16 @@ def apply_nvfp4_quant(policy: nn.Module, target: str) -> list[dict]:
                 bias = layer.bias.data.float() if layer.bias is not None else None
                 setattr(inner, attr, QuantizedLinear(W_q, bias, act_bits=4))
                 report.append({"target_module": f"model.{attr}", "scheme": "int4_fallback"})
+
+    elif target == "lm_dit":
+        # LM + Action Expert 양자화 (Vision tower + Action Head 제외)
+        lm = policy.model.paligemma_with_expert.paligemma.model.language_model
+        mtq.quantize(lm, config=NVFP4_DEFAULT_CFG)
+        report.append({"target_module": "language_model", "scheme": "nvfp4"})
+
+        expert = policy.model.paligemma_with_expert.gemma_expert
+        mtq.quantize(expert, config=NVFP4_DEFAULT_CFG)
+        report.append({"target_module": "gemma_expert", "scheme": "nvfp4"})
 
     return report
 
@@ -556,7 +582,7 @@ def main():
     # 검증
     VALID_SCHEMES = {"fp32", "int8wa", "int4wa", "int3wa", "nvfp4wa",
                      "int3wa_bw", "int4wa_svd"}
-    VALID_TARGETS = {"lm_only", "dit_only", "all"}
+    VALID_TARGETS = {"lm_only", "dit_only", "all", "lm_dit"}
     for s in args.schemes:
         if s not in VALID_SCHEMES:
             print(f"[ERROR] 알 수 없는 scheme: {s}. 가능: {sorted(VALID_SCHEMES)}")
