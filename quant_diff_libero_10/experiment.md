@@ -128,6 +128,108 @@ MUJOCO_GL=egl PYOPENGL_PLATFORM=egl python eval_nvfp4_lm_dit.py \
 
 ---
 
+## Batch Size 의미 및 영향
+
+### batch_size란?
+
+`batch_size = n_envs` — 동시에 실행하는 **병렬 환경(sub-env) 수**.
+
+```
+batch_size=5, n_episodes=10:
+  env0: episode 0, 5        (2 rounds)
+  env1: episode 1, 6
+  ...
+  env4: episode 4, 9
+
+batch_size=10, n_episodes=10:
+  env0: episode 0            (1 round)
+  env1: episode 1
+  ...
+  env9: episode 9
+```
+
+- `n_episodes` = 총 시도 횟수 (success rate 분모)
+- `batch_size` = 그 시도를 몇 개씩 묶어 병렬 처리하느냐
+
+### MTQ vs Duhyeon에서 batch_size 영향
+
+| 방법 | batch_size 영향 | 이유 |
+|------|----------------|------|
+| MTQ (NVFP4_DEFAULT_CFG) | 거의 없음 | weight-only fake-quant, per-block scale 고정 |
+| Duhyeon (forward hook) | **있음** | activation scale이 batch 전체 global amax 기준 |
+
+Duhyeon hook 내부:
+```python
+x_amax = x_2d.abs().max()   # ← batch 전체(n_envs개) observation의 global max
+decode_scale = x_amax / (fp_max * FP8_MAX)
+```
+
+- `batch_size=5`: 5개 env observation의 amax → scale 결정
+- `batch_size=10`: 10개 env observation의 amax → scale이 더 커질 가능성
+- outlier가 한 env에 있으면 나머지 env 전체의 quantization precision이 낮아짐
+
+---
+
+## Init State Controller (0407 vs 0417)
+
+### Init State란?
+
+각 task별 `.init` 파일에 저장된 **사전 정의된 초기 배치** (로봇 joint position, 오브젝트 pose 등).
+`init_state_id`로 인덱싱. **random seed와는 별개**.
+
+```
+init_state_id  →  init_states[id % len]  →  로봇/오브젝트 초기 배치
+random seed    →  시뮬레이션 물리 랜덤성 (미세 흔들림 등)
+```
+
+### 기본 동작 (0407, DH_WO_INIT)
+
+```python
+def reset(self, seed=None, **kwargs):
+    ...
+    set_init_state(init_states[init_state_id])
+    init_state_id += _reset_stride   # ← 항상, seed 무관하게 증가
+```
+
+**문제:** episode 중 성공 시 `step()`이 내부적으로 `reset(seed=None)` 자동 호출
+→ `init_state_id`가 의도치 않게 증가 → 다음 episode가 예상과 다른 init state 사용
+
+성공률이 높을수록 autoreset 빈도 증가 → init state 스킵 누적
+
+### Controller 동작 (0417, DH_INIT)
+
+```python
+def _controlled_reset(seed=None, **kwargs):
+    if seed is not None:     # eval 루프의 명시적 reset → 카운터 증가
+        env.init_state_id = counter[0]
+        counter[0] += stride
+    else:                    # step() 중 autoreset (seed=None) → 무시
+        pass
+```
+
+`seed is not None` = eval 루프가 의도적으로 새 episode 시작
+`seed is None`     = episode 중간 성공 후 자동 reset → init_state_id 유지
+
+### 실질적 차이
+
+| | DH_WO_INIT (0407) | DH_INIT (0417) |
+|---|---|---|
+| autoreset 시 init_state_id | 증가 (스킵 발생) | 유지 |
+| 실제 사용 init states | 불규칙 | 정확히 0~(n_episodes-1) |
+| 재현성 | 낮음 | 높음 |
+| 성공률 높을수록 영향 | 커짐 | 없음 |
+
+### 실험 구성
+
+| 실험명 | batch_size | n_episodes | init controller | 결과 디렉토리 |
+|--------|-----------|-----------|----------------|--------------|
+| MTQ_bs5 | 5 | 10 | — | `results_mtq_10ep` |
+| DH_bs5 | 5 | 10 | ❌ | `results_duhyeon_10ep` |
+| DH_WO_bs10 | 10 | 10 | ❌ | `results_duhyeon_bs10` |
+| DH_INIT_bs10 | 10 | 10 | ✅ (0417) | `results_duhyeon_init_bs10` |
+
+---
+
 ## 향후 비교 계획
 
 Duhyeon 코드 결과 수령 후:

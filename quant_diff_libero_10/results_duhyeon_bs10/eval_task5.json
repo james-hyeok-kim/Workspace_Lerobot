@@ -1,0 +1,89 @@
+{
+  "task_id": 5,
+  "task_command": "pick up the book and place it in the back compartment of the caddy",
+  "method": "duhyeon_nvfp4_bmm",
+  "n_episodes": 10,
+  "eval_results": {
+    "per_episode": [
+      {
+        "episode_ix": 0,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 1,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 2,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 3,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 4,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 5,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 6,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 7,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 8,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      },
+      {
+        "episode_ix": 9,
+        "sum_reward": 1.0,
+        "max_reward": 1.0,
+        "success": true,
+        "seed": null
+      }
+    ],
+    "aggregated": {
+      "avg_sum_reward": 1.0,
+      "avg_max_reward": 1.0,
+      "pc_success": 100.0,
+      "eval_s": 121.44756555557251,
+      "eval_ep_s": 12.144756603240968
+    }
+  },
+  "pc_success": 100.0,
+  "avg_sum_reward": 1.0
+}
