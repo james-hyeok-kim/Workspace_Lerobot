@@ -1,0 +1,17 @@
+{
+  "pretrained_path": "lerobot/pi05_libero_finetuned",
+  "quant": "NVFP4_DEFAULT_CFG (LM+DiT)",
+  "task_ids": [
+    0
+  ],
+  "n_episodes": 1,
+  "avg_success": 100.0,
+  "per_task": {
+    "0": {
+      "task_command": "put both the alphabet soup and the tomato sauce in the basket",
+      "pc_success": 100.0,
+      "avg_sum_reward": 1.0,
+      "captured_layers": 289
+    }
+  }
+}

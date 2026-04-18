@@ -1,0 +1,161 @@
+model,dataset,prompt_idx,prompt,denoising_step,total_denoising_steps,image_resolution
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),0,"beautiful Jaguar decorated with huichol beads, in the jungle, plants everywhere, DMT colours, ultra realistic , cinematic lighting   v 5",19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),1,a hamster dressed in cia outfit,19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),2,Jesus the shepherd leading the sheep out of the fence in Palestine 2000 years ago,19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),3,"beautiful pale pink baby fawn set among pastel pink flowers and soft wisteria, romantic specimen, pinkish white background, by Thomas kinkade Nadja Baxter Anne Stokes Nancy Noel ",19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),4,"hyperrealistic portrait of a young woman, Belarus, over the shoulder, brown and long hair, white dress, tree of life, symbol of birth and fertility, shedding light around her, depicted with swan and horse, Nikon D850, 85mm lens, f1.8, intense contrast, vivid colors ",19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),5,"A hyper detail painting in richard macneil style of a duck with her ducklings, walking through a field were there are cows grazing ",19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),6,A white horse in a storm of fire above the ocean ,19,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,0,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,1,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,2,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,3,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,4,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,5,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,6,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,7,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,8,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,9,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,10,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,11,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,12,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,13,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,14,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,15,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,16,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,17,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,18,20,1024x1024
+PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,MJHQ (xingjianleng/mjhq30k),7,tiger cub playing with soccer ball ,19,20,1024x1024
