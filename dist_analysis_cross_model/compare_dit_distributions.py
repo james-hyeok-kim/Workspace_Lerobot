@@ -489,12 +489,16 @@ def plot_timestep_heatmap(per_ts: dict, n_blocks: int, metric: str,
 
 
 def plot_outlier_curve(vla_per_ts: dict | None, px_per_ts: dict,
-                        metric: str, title: str, out_path: Path):
-    """Mean outlier metric across all layers per denoising step."""
+                        metric: str, title: str, out_path: Path,
+                        n_steps: int = None):
+    """Mean outlier metric across all layers per denoising step.
+    n_steps: None=전체, 정수=첫 n_steps만 (1 episode/sample).
+    """
     def get_curve(per_ts):
         if not per_ts:
             return None
-        n_ts = max(len(v) for v in per_ts.values())
+        n_ts_raw = max(len(v) for v in per_ts.values())
+        n_ts = min(n_steps, n_ts_raw) if n_steps is not None else n_ts_raw
         curve = []
         for ti in range(n_ts):
             vals = []
@@ -509,19 +513,233 @@ def plot_outlier_curve(vla_per_ts: dict | None, px_per_ts: dict,
     px_curve = get_curve(px_per_ts)
     vla_curve = get_curve(vla_per_ts) if vla_per_ts else None
 
+    step_label = f"Denoising step  (1 episode = {n_steps} steps)" if n_steps else "Denoising step"
+    px_label = f"PixArt DiT  (1 prompt, {len(px_curve)} steps)" if px_curve else "PixArt DiT"
+    vla_label = f"VLA DiT (pi0.5)  (1 episode, {len(vla_curve)} steps)" if vla_curve else "VLA DiT (pi0.5)"
+
     fig, ax = plt.subplots(figsize=(8, 4))
     if px_curve:
         ax.plot(range(len(px_curve)), px_curve, "s--", color=COLORS["pixart"],
-                label="PixArt DiT", linewidth=1.5)
+                label=px_label, linewidth=1.5)
     if vla_curve:
         ax.plot(range(len(vla_curve)), vla_curve, "o-", color=COLORS["vla"],
-                label="VLA DiT (pi0.5)", linewidth=1.5)
+                label=vla_label, linewidth=1.5)
 
-    ax.set_xlabel("Denoising step")
+    ax.set_xlabel(step_label)
     ax.set_ylabel(metric)
     ax.set_title(title)
     ax.legend()
     ax.grid(alpha=0.3)
+
+    plt.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"[SAVED] {out_path}")
+
+
+def plot_outlier_curve_by_type(
+    vla_per_ts: dict | None, px_per_ts: dict,
+    metric: str, out_path: Path,
+    n_steps: int = None,
+    layer_types: list = None,
+):
+    """layer_type별 분리된 abs_max curve.
+    subplot 1개 per layer_type. 각 subplot: x=timestep, y=mean across blocks.
+    PixArt(파랑 dashed) + VLA(빨강 solid) 두 선.
+    """
+    if layer_types is None:
+        layer_types = ["q", "k", "v", "o", "gate", "up", "down"]
+
+    LT_FULL = {
+        "q": "q_proj (self-attn Q)",
+        "k": "k_proj (self-attn K)",
+        "v": "v_proj (self-attn V)",
+        "o": "o_proj (self-attn O)",
+        "gate": "gate_proj (MLP gate)",
+        "up":   "up_proj (MLP up)",
+        "down": "down_proj (MLP down)",
+    }
+
+    def get_curve_by_lt(per_ts, lt):
+        if not per_ts:
+            return None
+        keys = [(blk, l) for (blk, l) in per_ts if l == lt]
+        if not keys:
+            return None
+        n_ts_raw = max(len(per_ts[k]) for k in keys)
+        n_ts = min(n_steps, n_ts_raw) if n_steps is not None else n_ts_raw
+        curve = []
+        for ti in range(n_ts):
+            vals = [float(per_ts[k][ti].get(metric, float("nan")))
+                    for k in keys if ti < len(per_ts[k])]
+            vals = [v for v in vals if not np.isnan(v)]
+            curve.append(np.mean(vals) if vals else np.nan)
+        return curve
+
+    n_lt = len(layer_types)
+    ncols = 4
+    nrows = (n_lt + ncols - 1) // ncols
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 4.5, nrows * 3.2),
+                             sharex=False)
+    axes = np.array(axes).flatten()
+
+    for i, lt in enumerate(layer_types):
+        ax = axes[i]
+        px_curve = get_curve_by_lt(px_per_ts, lt)
+        vla_curve = get_curve_by_lt(vla_per_ts, lt) if vla_per_ts else None
+
+        if px_curve:
+            ax.plot(range(len(px_curve)), px_curve, "s--",
+                    color=COLORS["pixart"], linewidth=1.5, label="PixArt DiT")
+        if vla_curve:
+            ax.plot(range(len(vla_curve)), vla_curve, "o-",
+                    color=COLORS["vla"], linewidth=1.5, label="VLA DiT (pi0.5)")
+
+        ax.set_title(LT_FULL.get(lt, lt), fontsize=9)
+        ax.set_xlabel("Denoising step", fontsize=8)
+        ax.set_ylabel(metric, fontsize=8)
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize=7)
+
+    # 남은 subplot 숨기기
+    for j in range(n_lt, len(axes)):
+        axes[j].set_visible(False)
+
+    step_note = f"  (1 episode/prompt = {n_steps} steps)" if n_steps else ""
+    fig.suptitle(f"Mean {metric} per Denoising Step — by Layer Type{step_note}\n"
+                 f"mean across all blocks per layer_type",
+                 fontsize=11)
+    plt.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"[SAVED] {out_path}")
+
+
+
+
+def extract_absmax_per_layer(per_ts: dict) -> dict:
+    """
+    입력: {(block_idx, layer_type): [ {abs_max, ...}, × n_global_ts ]}
+    출력: {(block_idx, layer_type): np.array of abs_max over timesteps}
+    """
+    out = {}
+    for (blk, lt), ts_list in per_ts.items():
+        arr = np.array([
+            float(e.get("abs_max", np.nan)) for e in ts_list
+        ], dtype=np.float32)
+        out[(blk, lt)] = arr
+    return out
+
+
+def plot_absmax_3d_per_layer(
+    per_layer: dict, n_blocks: int, out_path: Path, model_name: str,
+    layer_types: list = None,
+    n_steps: int = None,   # None=전체, 정수=첫 n_steps만 사용 (1 episode)
+):
+    """
+    3D axes: x=block_idx*7+layer_type_idx, y=global_timestep, z=abs_max.
+    - 각 (block, layer_type) 조합마다 timestep-line 1개 → outlier의 timestep-wise 흐름이 보임
+    - 각 line의 max 점은 별 마커로 강조
+    - 색상 = layer_type (7 색)
+    """
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+    from matplotlib.lines import Line2D
+
+    if not per_layer:
+        print(f"[WARN] No data for {model_name}, skipping")
+        return
+
+    if layer_types is None:
+        layer_types = ["q", "k", "v", "o", "gate", "up", "down"]
+    n_lt = len(layer_types)
+
+    LT_FULL = {
+        "q": "q_proj (self-attn Q)",
+        "k": "k_proj (self-attn K)",
+        "v": "v_proj (self-attn V)",
+        "o": "o_proj (self-attn O)",
+        "gate": "gate_proj (MLP gate)",
+        "up": "up_proj (MLP up)",
+        "down": "down_proj (MLP down)",
+    }
+
+    cmap = plt.get_cmap("tab10")
+    lt_color = {lt: cmap(i) for i, lt in enumerate(layer_types)}
+
+    # determine n_ts (전체 or 첫 episode만)
+    n_ts_raw = max(len(v) for v in per_layer.values())
+    n_ts = min(n_steps, n_ts_raw) if n_steps is not None else n_ts_raw
+
+    fig = plt.figure(figsize=(18, 10))
+    ax = fig.add_subplot(111, projection="3d")
+
+    ts_axis = np.arange(n_ts)
+
+    # 옅은 선: raw timestep trace per (block, layer_type) — 배경 역할
+    for (blk, lt), arr in sorted(per_layer.items()):
+        if lt not in layer_types:
+            continue
+        x_pos = blk * n_lt + layer_types.index(lt)
+        arr_cut = arr[:n_ts]
+        y = ts_axis[:len(arr_cut)]
+        color = lt_color[lt]
+        ax.plot3D([x_pos] * len(y), y, arr_cut,
+                  color=color, alpha=0.35, linewidth=0.6)
+
+    # 굵은 선: 각 layer_type별 timestep마다 block 간 max를 이은 peak trajectory
+    for lt in layer_types:
+        blocks_for_lt = sorted(b for (b, l) in per_layer if l == lt)
+        if not blocks_for_lt:
+            continue
+        stack = np.full((len(blocks_for_lt), n_ts), np.nan, dtype=np.float32)
+        for i, b in enumerate(blocks_for_lt):
+            arr = per_layer[(b, lt)][:n_ts]
+            stack[i, :len(arr)] = arr
+        peak_per_ts = np.nanmax(stack, axis=0)
+        argmax_blk = np.nanargmax(stack, axis=0)
+        x_traj = np.array([blocks_for_lt[i] * n_lt + layer_types.index(lt)
+                           for i in argmax_blk])
+        valid = np.isfinite(peak_per_ts)
+        ax.plot3D(x_traj[valid], ts_axis[valid], peak_per_ts[valid],
+                  color=lt_color[lt], alpha=0.95, linewidth=2.2, zorder=8)
+
+    # x tick: block 경계마다 라벨
+    x_ticks = [b * n_lt + (n_lt // 2) for b in range(n_blocks)]
+    x_labels = [f"B{b}" for b in range(n_blocks)]
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(x_labels, fontsize=6)
+
+    # y tick: 10 step 간격
+    y_ticks = list(range(0, n_ts, 10))
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels([str(t) for t in y_ticks], fontsize=7)
+
+    ax.set_xlabel(f"Block × LayerType  (x = block_idx × {n_lt} + layer_type_idx, "
+                  f"{n_blocks}×{n_lt}={n_blocks*n_lt} lines)", fontsize=9, labelpad=10)
+    ax.set_ylabel("Denoising step (global)", fontsize=9, labelpad=8)
+    ax.set_zlabel("abs_max", fontsize=9)
+    ax.view_init(elev=22, azim=-55)
+    ax.set_title(f"Activation abs_max per (block_idx, layer_type) over timesteps — {model_name}",
+                 fontsize=11, pad=12)
+
+    # layer_type color legend
+    legend_lines = [
+        Line2D([0], [0], color=lt_color[lt], lw=2.5, label=LT_FULL.get(lt, lt))
+        for lt in layer_types
+    ]
+    legend_lines.append(
+        Line2D([0], [0], color="black", lw=2.2,
+               label="굵은 선 = per-timestep peak across blocks (layer_type별)")
+    )
+    legend_lines.append(
+        Line2D([0], [0], color="gray", lw=0.6, alpha=0.5,
+               label=f"옅은 선 = 1 (block, layer_type) raw trace ({n_ts} steps)")
+    )
+    ax.legend(handles=legend_lines, loc="upper left",
+              bbox_to_anchor=(0.0, 1.0), fontsize=7.5, framealpha=0.9)
 
     plt.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -714,12 +932,37 @@ def main():
             model_name="VLA DiT (pi0.5)",
         )
 
-    # Outlier curve
+    # Outlier curve (1 episode/sample = 20 steps)
     plot_outlier_curve(
         vla_per_ts, px_per_ts, "abs_max",
         "Mean Activation AbsMax per Denoising Step: VLA DiT vs PixArt DiT",
         out_dir / "dit_timestep_outlier_curve.png",
+        n_steps=20,
     )
+
+    # Layer-type별 분리된 curve (1 episode = 20 steps)
+    plot_outlier_curve_by_type(
+        vla_per_ts, px_per_ts, "abs_max",
+        out_dir / "dit_outlier_curve_by_type.png",
+        n_steps=20,
+    )
+
+    # 3D per-layer: abs_max × (block × layer_type) × timestep  (1 episode = 20 steps)
+    px_per_layer = extract_absmax_per_layer(px_per_ts)
+    plot_absmax_3d_per_layer(
+        px_per_layer, px_n_blocks,
+        out_dir / "dit_3d_per_layer_absmax_pixart.png",
+        model_name="PixArt-Alpha DiT  (1 prompt, 20 denoising steps)",
+        n_steps=20,
+    )
+    if vla_per_ts:
+        vla_per_layer = extract_absmax_per_layer(vla_per_ts)
+        plot_absmax_3d_per_layer(
+            vla_per_layer, vla_n_blocks,
+            out_dir / "dit_3d_per_layer_absmax_vla.png",
+            model_name="VLA DiT (pi0.5)  (1 episode, 20 denoising steps)",
+            n_steps=20,
+        )
 
     # Summary CSV
     save_summary_csv(vla_w, px_w, vla_a, px_a,
