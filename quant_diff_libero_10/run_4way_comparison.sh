@@ -13,6 +13,7 @@ cd "$(dirname "$0")"
 
 export MUJOCO_GL=egl
 export PYOPENGL_PLATFORM=egl
+export CUDA_VISIBLE_DEVICES=0,1
 
 PYTHON=/home/jameskimh/.libero/bin/python
 
