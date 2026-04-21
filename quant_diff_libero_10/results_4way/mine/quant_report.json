@@ -1,0 +1,846 @@
+{
+  "total_linear": 168,
+  "quantized": 0,
+  "layers": [
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.0.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.1.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.1.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.1.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.1.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.1.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.1.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.2.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.2.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.2.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.2.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.2.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.2.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.3.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.3.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.3.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.3.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.3.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.3.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.4.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.4.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.4.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.4.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.4.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.4.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.5.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.5.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.5.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.5.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.5.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.5.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.6.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.6.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.6.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.6.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.6.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.6.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.7.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.7.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.7.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.7.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.7.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.7.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.8.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.8.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.8.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.8.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.8.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.8.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.9.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.9.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.9.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.9.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.9.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.9.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.10.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.10.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.10.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.10.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.10.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.10.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.11.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.11.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.11.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.11.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.11.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.11.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.12.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.12.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.12.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.12.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.12.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.12.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.13.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.13.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.13.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.13.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.13.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.13.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.14.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.14.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.14.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.14.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.14.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.14.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.15.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.15.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.15.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.15.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.15.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.15.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.16.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.16.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.16.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.16.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.16.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.16.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.17.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.17.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.17.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.17.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.17.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.17.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.18.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.18.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.18.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.18.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.18.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.18.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.19.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.19.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.19.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.19.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.19.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.19.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.20.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.20.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.20.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.20.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.20.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.20.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.21.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.21.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.21.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.21.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.21.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.21.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.22.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.22.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.22.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.22.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.22.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.22.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.23.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.23.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.23.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.23.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.23.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.23.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.24.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.24.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.24.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.24.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.24.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.24.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.25.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.25.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.25.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.25.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.25.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.25.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.26.self_attn.k_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.26.self_attn.v_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.26.self_attn.q_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.26.self_attn.out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.26.mlp.fc1",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.vision_tower.vision_model.encoder.layers.26.mlp.fc2",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.model.multi_modal_projector.linear",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.paligemma_with_expert.paligemma.lm_head",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.action_in_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.action_out_proj",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.time_mlp_in",
+      "type": "Linear",
+      "quantized": false
+    },
+    {
+      "name": "model.time_mlp_out",
+      "type": "Linear",
+      "quantized": false
+    }
+  ]
+}

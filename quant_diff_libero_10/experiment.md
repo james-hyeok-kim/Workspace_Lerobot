@@ -236,3 +236,63 @@ Duhyeon 코드 결과 수령 후:
 - `layer_captures_task{tid}.pt` (MTQ) vs Duhyeon의 동일 파일 비교
 - per-layer MSE / SNR / abs_err 비교
 - 차이가 큰 layer 식별 → eval 결과 차이 원인 규명
+
+---
+
+# Experiment: 4-Way Comparison — My Code vs Duhyeon ± Init Control
+
+## 목적
+
+기존 실험들은 `eval_policy(start_seed=None)`으로 seed가 고정되지 않아 재현성이 낮았고,
+`eval_duhyeon_init.py`의 init_state_controller도 `start_seed`가 없어 사실상 no-op이었다.
+
+이 실험에서 **4개 조건을 동일한 실험 조건**(`n_action_steps=10`, `batch_size=10`, `n_episodes=10`, `start_seed=1000`) 하에 비교하여:
+1. MTQ vs Duhyeon 구현의 순수한 quant 알고리즘 차이를 측정
+2. init_state_controller 유무의 영향을 정량화
+3. 기존 5% 차이가 seeding 문제였는지 quant 차이였는지 규명
+
+## 실험 조건
+
+| 항목 | 값 |
+|------|-----|
+| 모델 | `lerobot/pi05_libero_finetuned` |
+| Benchmark | LIBERO-10 (`libero_10`) |
+| Task IDs | 0 ~ 9 (10개 전부) |
+| n_episodes (per task) | 10 |
+| batch_size (n_envs) | 10 |
+| n_action_steps | **10** (기존 default 50에서 변경) |
+| start_seed | **1000** (기존 None에서 변경) |
+| use_amp | False |
+
+## 4개 조건
+
+| 조건 | Quant 방법 | init_control | 결과 디렉토리 |
+|------|-----------|:------------:|--------------|
+| mine | MTQ `NVFP4_DEFAULT_CFG` (LM+DiT) | ❌ | `results_4way/mine` |
+| mine_init | MTQ `NVFP4_DEFAULT_CFG` (LM+DiT) | ✅ | `results_4way/mine_init` |
+| dh | Duhyeon `nvfp4_bmm` forward hook | ❌ | `results_4way/dh` |
+| dh_init | Duhyeon `nvfp4_bmm` forward hook | ✅ | `results_4way/dh_init` |
+
+## init_state_controller 동작 원리
+
+`start_seed=1000`을 `eval_policy`에 전달하면 각 episode가 `seed=1000, 1001, ...`으로 seeded reset을 받는다.
+controller는 `seed is not None`(=외부 eval reset) 때만 `init_state_id`를 counter로 고정하고,
+`seed is None`(=step() 내 autoreset) 때는 `init_state_id`를 건드리지 않는다.
+
+- **controller 없을 때**: autoreset 때마다 `init_state_id += stride` → 성공률 높을수록 init state 스킵 누적
+- **controller 있을 때**: 정확히 episode 0~9가 init_state 0~9에 대응
+
+## 코드 변경 사항
+
+`eval_nvfp4_lm_dit.py`, `eval_duhyeon_nocapture.py` 양쪽에:
+- `--start_seed` (default=1000) 추가 → `eval_policy(start_seed=...)` 전달
+- `--n_action_steps` (default=10) 추가 → `policy_cfg.n_action_steps` 덮어쓰기
+- `--init_control` 플래그 추가 → `_install_init_state_controller()` 설치
+- `eval_summary.json`에 위 설정값 기록
+
+## 실행 방법
+
+```bash
+cd /home/jameskimh/workspace/Workspace_Lerobot/quant_diff_libero_10
+bash run_4way_comparison.sh
+```

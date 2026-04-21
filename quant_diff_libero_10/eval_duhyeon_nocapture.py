@@ -136,6 +136,36 @@ def attach_duhyeon_hooks(policy) -> list:
     return hooks
 
 
+def _install_init_state_controller(vec_env):
+    """Pin episode assignments to init_states[i + batch*n_envs] (from e2e_quant_0417.py).
+
+    External reset (seed != None): uses controlled counter.
+    Internal reset (seed=None, from step() autoreset): ignored.
+    """
+    def _make_controlled_reset(env, orig, counter, stride):
+        def _controlled_reset(seed=None, **kwargs):
+            if seed is not None:
+                env.init_state_id = counter[0]
+                result = orig(seed=seed, **kwargs)
+                counter[0] += stride
+            else:
+                result = orig(seed=seed, **kwargs)
+            return result
+        return _controlled_reset
+
+    counters = []
+    for sub_env in vec_env.envs:
+        counter = [sub_env.episode_index]
+        stride  = sub_env._reset_stride
+        sub_env.reset = _make_controlled_reset(sub_env, sub_env.reset, counter, stride)
+        counters.append((counter, sub_env.episode_index))
+
+    def reset_counters():
+        for counter, initial in counters:
+            counter[0] = initial
+    return reset_counters
+
+
 def get_task_commands(suite_name: str = "libero_10") -> dict:
     try:
         from libero.libero.benchmark import get_benchmark_dict
@@ -156,6 +186,12 @@ def main():
     parser.add_argument("--batch_size",  type=int, default=5)
     parser.add_argument("--device",      type=str, default="cuda")
     parser.add_argument("--output_dir",  type=str, default="results_duhyeon_10ep")
+    parser.add_argument("--start_seed",  type=int, default=1000,
+                        help="Seed passed to eval_policy for deterministic episode seeding")
+    parser.add_argument("--n_action_steps", type=int, default=10,
+                        help="Number of action steps per inference (overrides policy default 50)")
+    parser.add_argument("--init_control", action="store_true",
+                        help="Install init_state_controller for deterministic init state cycling")
     args = parser.parse_args()
 
     out_dir  = Path(args.output_dir)
@@ -171,6 +207,7 @@ def main():
     policy_cfg.pretrained_path = args.pretrained_path
     policy_cfg.device = args.device
     policy_cfg.use_amp = False
+    policy_cfg.n_action_steps = args.n_action_steps
 
     env_cfg   = LiberoEnv(task="libero_10", task_ids=task_ids)
     envs_dict = make_env(env_cfg, n_envs=args.batch_size)
@@ -207,6 +244,10 @@ def main():
     print(f"  Attached {len(dh_hooks)} hooks  (BMM q/k/v: {n_bmm})")
 
     suite_name = next(iter(envs_dict))
+    if args.init_control:
+        for tid in task_ids:
+            _install_init_state_controller(envs_dict[suite_name][tid])
+        print(f"[INFO] init_state_controller installed for {len(task_ids)} tasks")
     summary    = {}
 
     for tid in task_ids:
@@ -224,6 +265,7 @@ def main():
                 preprocessor=preprocessor,
                 postprocessor=postprocessor,
                 n_episodes=args.n_episodes,
+                start_seed=args.start_seed,
             )
 
         agg = eval_info.get("aggregated", {})
@@ -256,6 +298,10 @@ def main():
         "method": "duhyeon_nvfp4_bmm",
         "task_ids": task_ids,
         "n_episodes": args.n_episodes,
+        "batch_size": args.batch_size,
+        "start_seed": args.start_seed,
+        "n_action_steps": args.n_action_steps,
+        "init_control": args.init_control,
         "avg_success": avg,
         "per_task": {str(k): v for k, v in summary.items()},
     }
