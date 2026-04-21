@@ -13,7 +13,7 @@ LOG_DIR="${BASE_DIR}/logs/${MODE_NAME}"
 mkdir -p "$LOG_DIR"
 
 # 🌍 4. 환경 변수 주입 (LIBERO 데이터셋 및 경로 고정)
-export LIBERO_DATASET_PATH="/data/james_libero_datasets"
+export LIBERO_DATASET_PATH="/data/jameskimh/james_libero_datasets"
 # 대화형 프롬프트 방지를 위해 LEROBOT_HOME 자동 지정
 export HF_LEROBOT_HOME="${BASE_DIR}/.lerobot_home"
 
