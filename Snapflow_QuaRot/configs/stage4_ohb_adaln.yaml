@@ -1,0 +1,34 @@
+name: stage4_ohb_adaln
+pretrained_path: lerobot/pi05_libero_finetuned
+calib_stats_path: artifacts/stage0_calib_stats.pt
+output_dir: results/stage4
+
+policy:
+  n_action_steps: 10
+  num_inference_steps: 10
+
+eval:
+  task: libero_10
+  n_episodes: 100
+  batch_size: 1
+  device: cuda
+  use_amp: false
+  start_seed: 0
+
+quarot:
+  enabled: true
+  scope: llm+dit
+  r1: true
+  r2: true
+  r3: true
+  r4: false
+  fuse_rmsnorm: true
+
+ohb:
+  enabled: true
+  top_k_pct: 5.0          # top 5% outlier layers kept in FP16
+  metric: kurtosis         # "kurtosis" or "max_abs"
+  manifest_path: artifacts/stage4_ohb_manifest.json
+
+adaln:
+  auto_detect: true        # auto-detect use_adarms from PI05Config

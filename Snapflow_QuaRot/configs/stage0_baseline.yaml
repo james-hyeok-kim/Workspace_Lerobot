@@ -1,0 +1,16 @@
+name: stage0_baseline
+pretrained_path: lerobot/pi05_libero_finetuned
+calib_stats_path: artifacts/stage0_calib_stats.pt
+output_dir: results/stage0
+
+policy:
+  n_action_steps: 10
+  num_inference_steps: 10
+
+eval:
+  task: libero_10
+  n_episodes: 100
+  batch_size: 1
+  device: cuda
+  use_amp: false
+  start_seed: 0

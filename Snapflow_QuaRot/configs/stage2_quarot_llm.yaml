@@ -1,0 +1,25 @@
+name: stage2_quarot_llm
+pretrained_path: lerobot/pi05_libero_finetuned
+calib_stats_path: artifacts/stage0_calib_stats.pt
+output_dir: results/stage2
+
+policy:
+  n_action_steps: 10
+  num_inference_steps: 10
+
+eval:
+  task: libero_10
+  n_episodes: 100
+  batch_size: 1
+  device: cuda
+  use_amp: false
+  start_seed: 0
+
+quarot:
+  enabled: true
+  scope: llm          # PaliGemma LLM backbone only
+  r1: true            # embed + residual stream rotation
+  r2: true            # o_proj <-> down_proj offline rotation
+  r3: false           # V <-> o_proj (off for LLM-only; enabled in stage3)
+  r4: false           # online Hadamard (off until stage5)
+  fuse_rmsnorm: true

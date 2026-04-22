@@ -1,0 +1,25 @@
+name: stage3_quarot_llm_dit
+pretrained_path: lerobot/pi05_libero_finetuned
+calib_stats_path: artifacts/stage0_calib_stats.pt
+output_dir: results/stage3
+
+policy:
+  n_action_steps: 10
+  num_inference_steps: 10
+
+eval:
+  task: libero_10
+  n_episodes: 100
+  batch_size: 1
+  device: cuda
+  use_amp: false
+  start_seed: 0
+
+quarot:
+  enabled: true
+  scope: llm+dit       # both LLM backbone and DiT action expert
+  r1: true
+  r2: true
+  r3: true             # V <-> o_proj (linked pair for cross-attn KV/Q)
+  r4: false
+  fuse_rmsnorm: true

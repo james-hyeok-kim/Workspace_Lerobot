@@ -1,0 +1,47 @@
+name: stage6_e2e
+pretrained_path: lerobot/pi05_libero_finetuned
+calib_stats_path: artifacts/stage0_calib_stats.pt
+output_dir: results/stage6
+
+policy:
+  n_action_steps: 10
+  num_inference_steps: 1   # SnapFlow: 1-NFE
+
+eval:
+  task: libero_10
+  n_episodes: 100
+  batch_size: 1
+  device: cuda
+  use_amp: false
+  start_seed: 0
+
+# E2E: all features enabled
+snapflow:
+  enabled: true
+  student_ckpt: artifacts/stage1_student.safetensors
+
+quarot:
+  enabled: true
+  scope: llm+dit
+  r1: true
+  r2: true
+  r3: true
+  r4: true
+  fuse_rmsnorm: true
+
+ohb:
+  enabled: true
+  top_k_pct: 5.0
+  metric: kurtosis
+  manifest_path: artifacts/stage4_ohb_manifest.json
+
+adaln:
+  auto_detect: true
+
+w4a4:
+  enabled: true
+  weight_bits: 4
+  act_bits: 4
+  group_size: 128
+  online_hadamard: true
+  quant_state_path: artifacts/stage5_quant_state.pt

@@ -1,0 +1,29 @@
+name: stage1_snapflow
+pretrained_path: lerobot/pi05_libero_finetuned
+calib_stats_path: artifacts/stage0_calib_stats.pt
+output_dir: results/stage1
+
+policy:
+  n_action_steps: 10
+  num_inference_steps: 1   # SnapFlow: 1-NFE
+
+eval:
+  task: libero_10
+  n_episodes: 100
+  batch_size: 1
+  device: cuda
+  use_amp: false
+  start_seed: 0
+
+snapflow:
+  enabled: true
+  student_ckpt: artifacts/stage1_student.safetensors
+
+# Distillation training settings (used by stage1_snapflow_distill.py)
+distill:
+  dataset_repo_id: lerobot/libero_10_lerobot
+  train_steps: 10000
+  lr: 1.0e-5
+  batch_size: 4
+  grad_clip: 1.0
+  save_every: 1000
