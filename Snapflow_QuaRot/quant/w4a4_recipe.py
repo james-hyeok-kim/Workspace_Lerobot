@@ -29,16 +29,15 @@ def build_w4a4_config(
 
     Returns a config dict compatible with mtq.quantize(model, config=...).
     """
-    # Base quantizer templates
+    # Base quantizer templates — match INT4_BLOCKWISE_WEIGHT_ONLY_CFG format
     w4_quantizer = {
         "num_bits": 4,
-        "axis": 1,                  # per-group along output dim
-        "block_sizes": {-1: group_size},
+        "block_sizes": {-1: group_size},   # block along in_features (last dim of weight)
         "enable": True,
     }
     a4_quantizer = {
         "num_bits": 4,
-        "axis": None,               # per-tensor dynamic
+        "axis": None,   # per-tensor
         "enable": True,
     }
     a4_rotate = {
@@ -53,24 +52,29 @@ def build_w4a4_config(
     fp16_quantizer = {"enable": False}
 
     # Default: quantize all Linear layers with W4A4
+    # Safety: exclude BN, routing, output layers (matches INT4_BLOCKWISE pattern)
     config = {
         "quant_cfg": {
             "*weight_quantizer": w4_quantizer,
             "*input_quantizer": a4_quantizer,
-            # KV quantization (attention BMMs)
-            "*bmm_quantizer": a4_quantizer,
+            # Standard exclusions
+            "nn.BatchNorm1d": {"*": fp16_quantizer},
+            "nn.BatchNorm2d": {"*": fp16_quantizer},
+            "nn.LayerNorm": {"*": fp16_quantizer},
+            "*lm_head*": fp16_quantizer,
+            "*proj_out.*": fp16_quantizer,
+            "default": fp16_quantizer,
         },
         "algorithm": "max",
     }
 
-    # Online Hadamard at down_proj (R4)
+    # Online Hadamard at down_proj (R4) — overrides generic input_quantizer for down_proj
     if online_hadamard:
         config["quant_cfg"]["*down_proj*input_quantizer"] = a4_rotate
 
-    # OHB: keep outlier layers in FP16
+    # OHB: keep outlier layers in FP16 (added last so they take precedence)
     if ohb_manifest:
         for layer_name in ohb_manifest:
-            # ModelOpt uses module-path patterns; convert layer name to wildcard pattern
             config["quant_cfg"][f"*{layer_name}*weight_quantizer"] = fp16_quantizer
             config["quant_cfg"][f"*{layer_name}*input_quantizer"] = fp16_quantizer
 

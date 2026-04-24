@@ -24,23 +24,21 @@ def run_smoke(
     recipe,
 ) -> bool:
     """Run 1-episode smoke test. Returns True on success."""
-    from lerobot.scripts.lerobot_eval import eval_policy
+    from lerobot.scripts.lerobot_eval import eval_policy_all
     from lerobot.envs.factory import make_env
     from lerobot.envs.configs import LiberoEnv
     from contextlib import nullcontext
 
-    env_cfg = LiberoEnv(task=recipe.eval.task)
+    # Smoke: task 0 only, 1 episode
+    env_cfg = LiberoEnv(task=recipe.eval.task, task_ids=[0])
     envs_dict = make_env(env_cfg, n_envs=1)
-    suite = next(iter(envs_dict))
-    task_id = next(iter(envs_dict[suite]))
-    env = envs_dict[suite][task_id]
 
-    log.info("Running smoke test (1 episode, seed=0)...")
+    log.info("Running smoke test (task_id=0, 1 episode, seed=0)...")
 
     try:
         with torch.no_grad():
-            eval_info = eval_policy(
-                env=env,
+            eval_info = eval_policy_all(
+                envs=envs_dict,
                 policy=policy,
                 env_preprocessor=env_preprocessor,
                 env_postprocessor=env_postprocessor,
@@ -49,13 +47,15 @@ def run_smoke(
                 n_episodes=1,
                 start_seed=0,
             )
-        env.close()
+        for suite_envs in envs_dict.values():
+            for env in suite_envs.values():
+                env.close()
     except Exception as e:
         log.error(f"Smoke test FAILED with exception: {e}")
         return False
 
-    agg = eval_info.get("aggregated", {})
-    pc = agg.get("pc_success", None)
+    overall = eval_info.get("overall", {})
+    pc = overall.get("pc_success", None)
 
     # Check for NaN
     if pc is not None and pc != pc:  # NaN check

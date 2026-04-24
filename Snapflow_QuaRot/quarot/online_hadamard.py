@@ -58,8 +58,14 @@ def wrap_down_proj_with_r4(model: nn.Module, scope: str = "llm") -> int:
     n_wrapped = 0
 
     for name, module in model.named_modules():
+        # Detect decoder layers by attributes (robust for _PiGemmaDecoderLayerBase etc.)
         type_name = type(module).__name__
-        if "DecoderLayer" not in type_name and "GemmaDecoderLayer" not in type_name:
+        is_decoder = (
+            "DecoderLayer" in type_name
+            or "GemmaDecoderLayer" in type_name
+            or (hasattr(module, "input_layernorm") and hasattr(module, "self_attn") and hasattr(module, "mlp"))
+        )
+        if not is_decoder:
             continue
 
         if scope == "llm" and "expert" in name.lower():

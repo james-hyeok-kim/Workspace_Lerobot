@@ -37,9 +37,15 @@ log = logging.getLogger(__name__)
 
 
 def _get_decoder_layers(model: nn.Module, scope_name: str) -> list[nn.Module]:
-    """Extract decoder layer list from a Gemma model."""
+    """Extract decoder layer list from a Gemma model.
+
+    pi0.5 path note:
+    - LLM = paligemma.model.language_model  →  this is a GemmaModel, so layers are at .layers
+    - Expert = gemma_expert  →  this is PiGemmaForCausalLM, layers at .model.layers
+    """
     candidates = [
-        "model.layers",
+        "layers",                           # GemmaModel (LLM backbone) accessed directly
+        "model.layers",                     # PiGemmaForCausalLM (expert) has model.layers
         "model.language_model.model.layers",
         "language_model.model.layers",
     ]
@@ -104,15 +110,9 @@ def apply_quarot(policy: nn.Module, quarot_cfg) -> dict:
             states["dit"] = dit_state
             log.info("DiT offline rotations done.")
 
-            # ── Cross-attention R3 correction ────────────────────────────────
-            # LLM's V and o_proj have been rotated with head_signs from LLM state.
-            # The expert's cross-attention Q must receive the SAME rotation so that
-            # KV_rotated @ Q_rotated^T == KV @ Q^T (rotation cancels in dot-product).
-            # In the KV-cache path: LLM computes KV once, expert reads it.
-            # Since we rotate LLM V → KV cache is already rotated.
-            # We must rotate expert cross-attn Q by the SAME head_signs.
-            if r3 and "llm" in states:
-                _apply_cross_attn_q_correction(expert_layers, states["llm"].head_signs)
+            # Cross-attention V correction is handled automatically:
+            # H_llm = H_dit (same seed 42), so expert's o_proj (already rotated by DiT R3)
+            # absorbs both expert V and LLM-KV-cache V rotations: O @ H @ (W_o @ H)^T = O @ W_o^T ✓
 
     # ── Online Hadamard R4 (down_proj) ───────────────────────────────────────
     if r4:
@@ -148,11 +148,11 @@ def _apply_cross_attn_q_correction(expert_layers: list[nn.Module], head_signs: t
 
         D_dev = D.to(q.weight.device)
         # Rotate q_proj output rows per head (same direction as v_proj was rotated)
-        q_W = q.weight.data.float()
-        q_W = q_W.view(num_heads, head_dim, -1)
+        q_W = q.weight.data.float().contiguous()
+        q_W = q_W.reshape(num_heads, head_dim, -1)
         q_W = hadamard_transform(q_W, rotate_fp32=True)
         q_W = q_W * D_dev[None, :, None]
-        q.weight.data = q_W.view(num_heads * head_dim, -1).to(q.weight.dtype)
+        q.weight.data = q_W.reshape(num_heads * head_dim, -1).to(q.weight.dtype)
 
 
 def _find_submodule(model: nn.Module, paths: list[str]) -> nn.Module | None:

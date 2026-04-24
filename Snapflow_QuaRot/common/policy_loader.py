@@ -44,6 +44,7 @@ def load_policy(recipe: Recipe, device: str | None = None):
     # Override policy parameters from recipe
     policy_cfg.n_action_steps = recipe.policy.n_action_steps
     policy_cfg.num_inference_steps = recipe.policy.num_inference_steps
+    policy_cfg.compile_model = False  # torch.compile takes 30-45+ min; use eager mode
 
     env_cfg = LiberoEnv(task=recipe.eval.task)
 
@@ -75,7 +76,7 @@ def load_policy(recipe: Recipe, device: str | None = None):
 
     if recipe.w4a4.enabled:
         from quant.modelopt_bridge import apply_w4a4
-        apply_w4a4(policy, recipe.w4a4)
+        apply_w4a4(policy, recipe.w4a4, env_cfg=env_cfg)
         log.info("W4A4 quantization applied.")
 
     return policy, preprocessor, postprocessor, env_preprocessor, env_postprocessor

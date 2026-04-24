@@ -178,3 +178,11 @@ outputs/
 *.xml
 *.part
 *.pt
+
+# Pretrained models
+*.safetensors
+*.bin
+*.ckpt*.deb
+results/
+Snapflow_QuaRot/results/
+Snapflow_QuaRot/artifacts/

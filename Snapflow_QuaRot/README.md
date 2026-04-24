@@ -84,6 +84,23 @@ results/        — 평가 결과 (leaderboard.md, stage{N}/)
 ## 의존성
 
 ```bash
+# ⚠️ CRITICAL: transformers 5.3.0 필수 (5.5.x 에서 pi0.5 attention masking 버그 → 0% success)
+pip install transformers==5.3.0
+
 # fast_hadamard_transform (QuaRot R4 online Hadamard 에 필요)
 pip install git+https://github.com/Dao-AILab/fast-hadamard-transform.git
 ```
+
+## 알려진 이슈: transformers 버전
+
+**transformers ≥ 5.4.0 에서 pi0.5 가 LIBERO-10 에서 0% success 를 보인다.**
+
+원인: 5.4.0 이후 `create_causal_mask` API 변경으로 `cache_position` 인자가 deprecated 됨.
+5.3.0 에서는 `cache_position` 텐서가 어텐션 마스크에 직접 사용됐지만
+5.5.x 에서는 `q_offset` + `q_length` 정수로 대체되면서
+pi0.5 의 joint attention (LLM prefix → 액션 expert) 에서 마스킹이 깨진다.
+
+**검증:** transformers==5.3.0 → task0 100% / LIBERO-10 평균 97%  
+transformers==5.5.4 → 모든 task 0%
+
+`pip install transformers==5.3.0` 으로 고정 후 실험 진행할 것.

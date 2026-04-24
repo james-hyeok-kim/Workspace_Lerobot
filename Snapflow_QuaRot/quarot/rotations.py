@@ -22,22 +22,22 @@ if str(_opt_dir) not in sys.path:
 
 
 def hadamard_transform(x: Tensor, rotate_fp32: bool = True, block_size: int | None = None) -> Tensor:
-    """Apply normalized Hadamard transform along x's last dimension.
+    """Apply normalized (orthogonal) Hadamard transform along x's last dimension.
 
-    Delegates to ModelOpt's fast_hadamard_transform if available;
-    falls back to a pure-PyTorch recursive Hadamard for small dims.
+    Uses pure-PyTorch recursive WHT. ModelOpt's fast_hadamard_transform is NOT used
+    because it requires the `fast_hadamard_transform` C extension (not installed here)
+    and its block-RHT mode is non-unitary for QuaRot's purposes.
     """
-    try:
-        from modelopt.torch.quantization.nn.functional import normalized_hadamard_transform
-        return normalized_hadamard_transform(x, rotate_fp32=rotate_fp32, block_size=block_size)
-    except (ImportError, ModuleNotFoundError, AssertionError):
-        return _pytorch_hadamard(x)
+    orig_dtype = x.dtype
+    if rotate_fp32:
+        x = x.float()
+    out = _pytorch_hadamard(x)
+    return out.to(orig_dtype) if rotate_fp32 else out
 
 
 def _pytorch_hadamard(x: Tensor) -> Tensor:
-    """Pure-PyTorch normalized Hadamard (slower, no dim constraint)."""
+    """Pure-PyTorch normalized Hadamard (orthogonal, norm-preserving)."""
     d = x.shape[-1]
-    # Pad to next power of 2
     p2 = 1 << math.ceil(math.log2(d))
     if p2 != d:
         x = torch.nn.functional.pad(x, (0, p2 - d))
@@ -46,11 +46,13 @@ def _pytorch_hadamard(x: Tensor) -> Tensor:
 
 
 def _recursive_hadamard(x: Tensor) -> Tensor:
+    """Full Walsh-Hadamard transform (unnormalized). Norm scales by sqrt(n)."""
     n = x.shape[-1]
     if n == 1:
         return x
     half = n // 2
-    a, b = x[..., :half], x[..., half:]
+    a = _recursive_hadamard(x[..., :half])
+    b = _recursive_hadamard(x[..., half:])
     return torch.cat([a + b, a - b], dim=-1)
 
 

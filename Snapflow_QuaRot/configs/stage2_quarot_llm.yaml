@@ -1,5 +1,5 @@
 name: stage2_quarot_llm
-pretrained_path: lerobot/pi05_libero_finetuned
+pretrained_path: /data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned
 calib_stats_path: artifacts/stage0_calib_stats.pt
 output_dir: results/stage2
 

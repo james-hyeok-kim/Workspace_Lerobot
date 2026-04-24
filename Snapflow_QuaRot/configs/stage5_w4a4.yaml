@@ -1,5 +1,5 @@
 name: stage5_w4a4
-pretrained_path: lerobot/pi05_libero_finetuned
+pretrained_path: /data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned
 calib_stats_path: artifacts/stage0_calib_stats.pt
 output_dir: results/stage5
 
@@ -38,5 +38,5 @@ w4a4:
   weight_bits: 4
   act_bits: 4
   group_size: 128
-  online_hadamard: true   # R4 via ModelOpt RotateConfig
+  online_hadamard: false  # R4 already applied by quarot.r4 via RotatedLinear wrapper
   quant_state_path: artifacts/stage5_quant_state.pt

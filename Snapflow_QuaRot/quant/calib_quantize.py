@@ -25,40 +25,52 @@ def make_calibration_loop(
 
     mtq.quantize(policy, config=cfg, forward_loop=forward_loop)
 
-    The callable receives the (possibly quantized) model and runs
-    N forward passes to collect calibration statistics.
+    Uses eval_policy_all for robust preprocessing (same as calib_capture.py).
     """
+    from lerobot.scripts.lerobot_eval import eval_policy_all
     from lerobot.envs.factory import make_env, make_env_pre_post_processors
+    from lerobot.policies.factory import make_pre_post_processors
 
-    envs_dict = make_env(env_cfg, n_envs=1)
-    suite = next(iter(envs_dict))
-    task_id = next(iter(envs_dict[suite]))
-    env = envs_dict[suite][task_id]
+    pretrained_path = getattr(policy.config, "pretrained_path", "") or ""
+    try:
+        preprocessor, postprocessor = make_pre_post_processors(
+            policy_cfg=policy.config,
+            pretrained_path=pretrained_path,
+        )
+    except Exception as e:
+        log.warning(f"Could not build preprocessor ({e}); using identity.")
+        preprocessor = lambda x: x
+        postprocessor = lambda x: x
+
     env_preprocessor, env_postprocessor = make_env_pre_post_processors(
         env_cfg=env_cfg, policy_cfg=policy.config
     )
 
-    obs_raw, _ = env.reset(seed=0)
-    n_collected = [0]
+    n_episodes = max(2, (n_chunks // 50) + 1)
 
     def forward_loop(model):
-        nonlocal obs_raw
         model.eval()
+        envs_dict = make_env(env_cfg, n_envs=1)
         with torch.no_grad():
-            while n_collected[0] < n_chunks:
-                obs = env_preprocessor(obs_raw)
-                _ = model.select_action(obs)
-                n_collected[0] += 1
-
-                obs_raw, _, terminated, truncated, _ = env.step(
-                    torch.zeros(env.action_space.shape, device=device)
+            try:
+                eval_policy_all(
+                    envs=envs_dict,
+                    policy=model,
+                    env_preprocessor=env_preprocessor,
+                    env_postprocessor=env_postprocessor,
+                    preprocessor=preprocessor,
+                    postprocessor=postprocessor,
+                    n_episodes=n_episodes,
+                    start_seed=0,
                 )
-                if terminated.any() or truncated.any():
-                    obs_raw, _ = env.reset()
-
-                if n_collected[0] % 16 == 0:
-                    log.info(f"  Calibration: {n_collected[0]}/{n_chunks} chunks")
-
-        env.close()
+            except Exception as e:
+                log.warning(f"MTQ calibration loop error: {e} — quantizers may use fallback amax.")
+        for suite_envs in envs_dict.values():
+            for env in suite_envs.values():
+                try:
+                    env.close()
+                except Exception:
+                    pass
+        log.info(f"MTQ calibration: {n_episodes} episodes completed.")
 
     return forward_loop

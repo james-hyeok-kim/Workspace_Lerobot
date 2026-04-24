@@ -1,5 +1,6 @@
 name: stage0_baseline
-pretrained_path: lerobot/pi05_libero_finetuned
+# local path confirmed available at /data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned
+pretrained_path: /data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned
 calib_stats_path: artifacts/stage0_calib_stats.pt
 output_dir: results/stage0
 
@@ -9,8 +10,9 @@ policy:
 
 eval:
   task: libero_10
-  n_episodes: 100
-  batch_size: 1
+  # 10 tasks × 10 episodes = 100 total
+  n_episodes: 10
+  batch_size: 10
   device: cuda
   use_amp: false
-  start_seed: 0
+  start_seed: 1000

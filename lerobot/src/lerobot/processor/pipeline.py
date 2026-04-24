@@ -251,8 +251,10 @@ class ProcessorMigrationError(Exception):
 
 
 @dataclass
-class DataProcessorPipeline[TInput, TOutput](HubMixin):
+class DataProcessorPipeline(HubMixin):
     """A sequential pipeline for processing data, integrated with the Hugging Face Hub.
+
+    Note: __class_getitem__ is provided for Python 3.11 compatibility (3.12+ has built-in generics).
 
     This class chains together multiple `ProcessorStep` instances to form a complete
     data processing workflow. It's generic, allowing for custom input and output types,
@@ -266,6 +268,9 @@ class DataProcessorPipeline[TInput, TOutput](HubMixin):
         before_step_hooks: A list of functions to be called before each step is executed.
         after_step_hooks: A list of functions to be called after each step is executed.
     """
+
+    def __class_getitem__(cls, item):
+        return cls
 
     steps: Sequence[ProcessorStep] = field(default_factory=list)
     name: str = "DataProcessorPipeline"
@@ -1431,9 +1436,9 @@ class DataProcessorPipeline[TInput, TOutput](HubMixin):
         return transformed_transition[TransitionKey.COMPLEMENTARY_DATA]
 
 
-# Type aliases for semantic clarity.
-RobotProcessorPipeline = DataProcessorPipeline[TInput, TOutput]
-PolicyProcessorPipeline = DataProcessorPipeline[TInput, TOutput]
+# Type aliases for semantic clarity (Python 3.11 compatible).
+RobotProcessorPipeline = DataProcessorPipeline
+PolicyProcessorPipeline = DataProcessorPipeline
 
 
 class ObservationProcessorStep(ProcessorStep, ABC):

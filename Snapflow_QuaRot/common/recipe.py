@@ -56,6 +56,8 @@ class EvalConfig:
     device: str = "cuda"
     use_amp: bool = False
     start_seed: int = 0
+    task_ids: list | None = None  # restrict to specific LIBERO task indices; None = all
+    n_episodes_per_task: int = 10  # episodes per task in eval_policy_all
 
 
 @dataclass
@@ -78,7 +80,7 @@ class Recipe:
     w4a4: W4A4Config = field(default_factory=W4A4Config)
 
     # Paths
-    pretrained_path: str = "lerobot/pi05_libero_finetuned"
+    pretrained_path: str = "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"
     calib_stats_path: str = "artifacts/stage0_calib_stats.pt"
     output_dir: str = "results/stage0"
 

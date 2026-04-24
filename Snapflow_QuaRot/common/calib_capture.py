@@ -1,7 +1,7 @@
 """Collect per-Linear activation statistics from a LIBERO subset.
 
 Usage:
-    stats = capture_calib_stats(policy, env_cfg, n_chunks=64)
+    stats = capture_calib_stats(policy, preprocessor, env_preprocessor, ..., n_chunks=64)
     torch.save(stats, "artifacts/stage0_calib_stats.pt")
 
 stats structure:
@@ -17,13 +17,12 @@ stats structure:
 from __future__ import annotations
 
 import logging
-from contextlib import nullcontext
 from pathlib import Path
 
 import torch
 from torch import nn
 
-from common.hooks import ActivationStore
+from common.hooks import OnlineStatsStore
 
 log = logging.getLogger(__name__)
 
@@ -43,74 +42,116 @@ def capture_calib_stats(
     n_chunks: int = 64,
     device: str = "cuda",
     seed: int = 0,
+    preprocessor=None,
+    env_preprocessor=None,
+    env_postprocessor=None,
+    postprocessor=None,
 ) -> dict[str, dict]:
     """Run n_chunks inference steps and collect activation stats for every Linear.
 
-    Returns a dict keyed by module name with max_abs, kurtosis, mean, std.
+    Uses eval_policy_all with full preprocessing pipeline to avoid preprocessor issues.
+
+    Args:
+        policy: The policy to capture stats from.
+        env_cfg: LiberoEnv config (used to create calib envs).
+        n_chunks: Approximate number of select_action calls to collect.
+        preprocessor: VLM preprocessor from load_policy (optional but recommended).
+        env_preprocessor: Env-specific preprocessor from load_policy (optional).
+        env_postprocessor: Env-specific postprocessor from load_policy (optional).
+        postprocessor: Policy output postprocessor from load_policy (optional).
+    Returns:
+        dict keyed by module name with max_abs, kurtosis, mean, std.
     """
+    from lerobot.scripts.lerobot_eval import eval_policy_all
     from lerobot.envs.factory import make_env, make_env_pre_post_processors
+    from lerobot.envs.configs import LiberoEnv
     from lerobot.policies.factory import make_pre_post_processors
-    from lerobot.configs.policies import PreTrainedConfig
 
-    log.info(f"Capturing calibration stats over {n_chunks} forward passes...")
+    log.info(f"Capturing calibration stats over ~{n_chunks} forward passes...")
 
-    # Attach activation hooks to all nn.Linear inside the inner model
+    # Restrict to task 0 for speed
+    calib_env_cfg = LiberoEnv(
+        task=env_cfg.task if hasattr(env_cfg, "task") else "libero_10",
+        task_ids=[0],
+    )
+
+    # Build missing preprocessors from policy config
+    if env_preprocessor is None or env_postprocessor is None:
+        _ep, _epst = make_env_pre_post_processors(
+            env_cfg=calib_env_cfg, policy_cfg=policy.config
+        )
+        env_preprocessor = env_preprocessor or _ep
+        env_postprocessor = env_postprocessor or _epst
+
+    if preprocessor is None or postprocessor is None:
+        pretrained_path = getattr(policy.config, "pretrained_path", "") or ""
+        try:
+            _pre, _post = make_pre_post_processors(
+                policy_cfg=policy.config,
+                pretrained_path=pretrained_path,
+            )
+        except Exception as e:
+            log.warning(f"Could not build preprocessor ({e}); calib may be inaccurate.")
+            _pre, _post = (lambda x: x), (lambda x: x)
+        preprocessor = preprocessor or _pre
+        postprocessor = postprocessor or _post
+
+    # Attach activation hooks (online stats — no tensor accumulation)
     inner = getattr(policy, "model", policy)
-
-    store = ActivationStore()
+    store = OnlineStatsStore()
     store.register(inner, module_types=(nn.Linear,))
 
+    # Count actual select_action calls via a counter hook
+    n_collected = [0]
+    _orig_select = policy.select_action
+
+    def _counting_select(obs):
+        result = _orig_select(obs)
+        n_collected[0] += 1
+        return result
+
+    policy.select_action = _counting_select
     policy.eval()
-    n_collected = 0
 
-    # Minimal rollout: just collect activations from select_action calls
-    # We do this by running a short eval without tracking env success
+    # n_episodes: enough to accumulate n_chunks calls
+    # Each episode is at most 520 steps with n_action_steps=10 → up to 52 select_action calls
+    # So 2 episodes should yield ~100 calls, which is > 64
+    n_episodes = max(2, (n_chunks // 50) + 1)
+
     try:
-        from lerobot.envs.factory import make_env
-        envs_dict = make_env(env_cfg, n_envs=1)
-        suite = next(iter(envs_dict))
-        task_id = next(iter(envs_dict[suite]))
-        env = envs_dict[suite][task_id]
-
-        from lerobot.envs.factory import make_env_pre_post_processors
-        env_preprocessor, env_postprocessor = make_env_pre_post_processors(
-            env_cfg=env_cfg, policy_cfg=policy.config
-        )
-
-        obs_raw, _ = env.reset(seed=seed)
+        envs_dict = make_env(calib_env_cfg, n_envs=1)
 
         with torch.no_grad():
-            while n_collected < n_chunks:
-                obs = env_preprocessor(obs_raw)
-                _ = policy.select_action(obs)
-                n_collected += 1
-                obs_raw, _, terminated, truncated, _ = env.step(
-                    torch.zeros(env.action_space.shape, device=device)
-                )
-                if terminated.any() or truncated.any():
-                    obs_raw, _ = env.reset()
+            eval_policy_all(
+                envs=envs_dict,
+                policy=policy,
+                env_preprocessor=env_preprocessor,
+                env_postprocessor=env_postprocessor,
+                preprocessor=preprocessor,
+                postprocessor=postprocessor,
+                n_episodes=n_episodes,
+                start_seed=seed,
+            )
 
-        env.close()
+        for suite_envs in envs_dict.values():
+            for env in suite_envs.values():
+                env.close()
+
     except Exception as e:
-        log.warning(f"Env-based calibration failed ({e}), using random-input fallback.")
+        log.warning(f"Env-based calibration failed ({e}), calib stats will be empty.")
         store.remove()
+        policy.select_action = _orig_select
         return {}
     finally:
         store.remove()
+        policy.select_action = _orig_select
 
-    # Aggregate per-layer stats
-    stats: dict[str, dict] = {}
-    for name, tensors in store.data.items():
-        if not tensors:
-            continue
-        all_acts = torch.cat([t.reshape(-1) for t in tensors])
-        stats[name] = {
-            "max_abs": all_acts.abs().max().item(),
-            "kurtosis": _kurtosis(all_acts),
-            "mean": all_acts.mean().item(),
-            "std": all_acts.std().item(),
-            "n_samples": all_acts.numel(),
-        }
+    log.info(f"Calibration: {n_collected[0]} forward passes completed.")
+
+    # Retrieve finalized online stats (no tensor concatenation needed)
+    stats: dict[str, dict] = {
+        name: s for name, s in store.data.items() if s["n_samples"] > 0
+    }
 
     log.info(f"Captured stats for {len(stats)} Linear layers.")
     return stats
