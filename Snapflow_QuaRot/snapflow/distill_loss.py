@@ -1,20 +1,28 @@
-"""SnapFlow distillation loss for pi0.5.
+"""SnapFlow distillation loss — 논문 수식 그대로 구현.
 
-pi0.5 flow convention (from modeling_pi05.py::PI05Pytorch.forward):
-  x_t = t * noise + (1 - t) * actions   (t=1: pure noise, t=0: clean)
-  u_t = noise - actions                  (velocity target)
-  v_t = net(x_t, t)                      (predicted velocity)
+논문 (Eq. 12): L = α·L_FM + (1-α)·λ·L_shortcut   [α=0.5, λ=0.1]
 
-SnapFlow distillation loss:
-  1. Sample t ~ U(0, 1), noise ~ N(0, I)
-  2. x_t = t * noise + (1 - t) * actions
-  3. v_T = teacher(x_t, t)              [no_grad]
-  4. a_T = x_t - t * v_T               [teacher's predicted clean action, Euler to t=0]
-  5. v_S = student(noise, t=1)          [1-NFE from pure noise]
-  6. a_S = noise - v_S                  [student's predicted clean action]
-  7. loss = MSE(a_S, a_T)
+L_FM  (표준 flow matching):
+  t ~ U(0,1), x_t = (1-t)*x0 + t*ε
+  L_FM = ||Fθ(x_t, s=t, t=t) - (ε - x0)||²
+
+L_shortcut (2-step Euler shortcut, self-distillation):
+  x1 = ε  (pure noise)
+  [stop-grad] v1     = Fθ(x1,   s=1,   t=1)
+  [stop-grad] x0.5   = x1 - 0.5·v1
+  [stop-grad] v0.5   = Fθ(x0.5, s=0.5, t=0.5)
+  v_target = (v1 + v0.5) / 2   [trapezoidal Euler average]
+  [with-grad] v_1nfe = Fθ(x1,   s=0,   t=1)
+  L_shortcut = ||v_1nfe - v_target||²
+
+target-time embedding φs (TargetTimeEmbedding):
+  adarms_cond += φs(s) — 모델이 s=t (FM) vs s=0 (1-NFE)를 구별하게 함
+  zero-init이므로 학습 초기에는 기존 모델 동작 보존.
+
+피험자 pi0.5 flow convention:
+  x_t = t * noise + (1 - t) * actions   (t=1: pure noise, t=0: clean action)
+  velocity target = noise - actions
 """
-
 from __future__ import annotations
 
 import torch
@@ -22,23 +30,30 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 
-def get_velocity(inner, images, img_masks, tokens, masks, x_t: Tensor, t: Tensor) -> Tensor:
-    """Compute flow velocity v_t without KV cache or deepcopy.
+# ── forward 헬퍼 ────────────────────────────────────────────────────────────
 
-    Replicates PI05Pytorch.forward() internals but returns v_t directly.
-    Compatible with gradient flow (student) and no_grad (teacher) contexts.
+def get_velocity(
+    inner,
+    images,
+    img_masks,
+    tokens,
+    masks,
+    x_t: Tensor,
+    t: Tensor,
+    s: Tensor | None = None,
+    target_time_emb: nn.Module | None = None,
+) -> Tensor:
+    """pi0.5 action expert로부터 velocity 계산.
 
     Args:
         inner: PI05Pytorch instance (policy.model)
-        images: list of [B, H, W, C] or [B, C, H, W] float32 tensors
-        img_masks: list of [B] bool tensors
-        tokens: [B, seq_len] int64
-        masks: [B, seq_len] bool
-        x_t: [B, chunk_size, max_action_dim] noisy action at time t
-        t: [B] timestep values in [0, 1]
-
+        images, img_masks, tokens, masks: VLM prefix inputs
+        x_t: [B, chunk, max_action_dim] noisy action
+        t:   [B] current time (0=clean, 1=noise)
+        s:   [B] target time. None이면 t와 동일 (FM mode)
+        target_time_emb: TargetTimeEmbedding | None
     Returns:
-        v_t: [B, chunk_size, max_action_dim] predicted velocity
+        v_t: [B, chunk, max_action_dim] predicted velocity
     """
     from lerobot.policies.pi05.modeling_pi05 import make_att_2d_masks
 
@@ -47,7 +62,9 @@ def get_velocity(inner, images, img_masks, tokens, masks, x_t: Tensor, t: Tensor
     )
     suffix_embs, suffix_pad_masks, suffix_att_masks, adarms_cond = inner.embed_suffix(x_t, t)
 
-    # Match dtype to model weights
+    # V4: adarms_cond은 항상 clean FM conditioning으로 유지 (phi_s 주입 X)
+    # phi_s는 action output space에 주입 (AdaRMS 오염 방지)
+
     model_dtype = (
         inner.paligemma_with_expert.paligemma.model.language_model
         .layers[0].self_attn.q_proj.weight.dtype
@@ -73,78 +90,123 @@ def get_velocity(inner, images, img_masks, tokens, masks, x_t: Tensor, t: Tensor
 
     suffix_out = suffix_out[:, -inner.config.chunk_size:]
     suffix_out = suffix_out.to(dtype=torch.float32)
-    return inner.action_out_proj(suffix_out)
+    v = inner.action_out_proj(suffix_out)  # [B, chunk, max_action_dim]
 
+    # V4: phi_s는 action output에 더함 (conditioning이 아닌 action space에 주입)
+    # adarms_cond는 항상 FM conditioning으로 유지 → FM mode (10-NFE) 절대 오염 안 됨
+    if target_time_emb is not None and s is not None:
+        phi_s = target_time_emb(s.to(dtype=v.dtype))  # [B, out_dim]
+        v = v + phi_s.unsqueeze(1)  # broadcast: [B, 1, out_dim] → [B, chunk, out_dim]
+
+    return v
+
+
+# ── 손실 함수 ────────────────────────────────────────────────────────────────
 
 class SnapFlowLoss(nn.Module):
-    """SnapFlow distillation loss for pi0.5."""
+    """SnapFlow 논문 수식 그대로 구현한 손실 함수.
 
-    def __init__(self, action_dim: int = 7):
+    L = α·L_FM + (1-α)·λ·L_shortcut   (α=0.5, λ=0.1)
+    """
+
+    def __init__(
+        self,
+        action_dim: int = 7,
+        alpha: float = 0.5,
+        lam: float = 0.1,
+    ):
         super().__init__()
         self.action_dim = action_dim
+        self.alpha = alpha
+        self.lam = lam
 
     def forward(
         self,
-        teacher_policy,
-        student_policy,
+        policy,
         batch: dict,
+        target_time_emb: nn.Module | None = None,
     ) -> dict[str, Tensor]:
-        """Compute SnapFlow distillation loss.
+        """SnapFlow mixed loss.
 
         Args:
-            teacher_policy: frozen PI05Policy
-            student_policy: trainable PI05Policy (student)
-            batch: dict with image/language/action keys
-
+            policy: trainable PI05Policy (VLM frozen, action expert trainable)
+            batch: {image, language, action, ...}
+            target_time_emb: TargetTimeEmbedding (optional, adds s-encoding)
         Returns:
-            dict with 'loss' and diagnostic tensors
+            dict with 'loss' and diagnostics
         """
-        # Preprocess images through the student policy (both teacher/student have same preprocessing)
-        images, img_masks = student_policy._preprocess_images(batch)
-
         from lerobot.utils.constants import OBS_LANGUAGE_TOKENS, OBS_LANGUAGE_ATTENTION_MASK
+
+        images, img_masks = policy._preprocess_images(batch)
         tokens = batch[OBS_LANGUAGE_TOKENS]
-        masks = batch[OBS_LANGUAGE_ATTENTION_MASK]
+        masks  = batch[OBS_LANGUAGE_ATTENTION_MASK]
 
-        # Get padded actions (chunk_size, max_action_dim)
-        actions = student_policy.prepare_action(batch)  # [B, chunk_size, max_action_dim]
-        B, T, D = actions.shape
-        device = actions.device
-
-        # Sample noise and interpolation time
-        noise = student_policy.model.sample_noise(actions.shape, device)  # [B, T, D]
-        t = torch.rand(B, device=device, dtype=actions.dtype)             # [B]
-        t_bcast = t[:, None, None]
-
-        # x_t: pi0.5 convention — t*noise + (1-t)*actions
-        x_t = t_bcast * noise + (1.0 - t_bcast) * actions
-
-        # Teacher velocity at (x_t, t) — no gradient
-        t_teacher = t.clone()
-        with torch.no_grad():
-            v_teacher = get_velocity(
-                teacher_policy.model, images, img_masks, tokens, masks, x_t, t_teacher
-            )
-
-        # Teacher's clean action (Euler step from t to 0)
-        a_teacher = x_t - t_bcast * v_teacher  # [B, T, D]
-
-        # Student velocity at (noise, t=1) — 1 NFE, with gradient
-        t_one = torch.ones(B, device=device, dtype=actions.dtype)
-        v_student = get_velocity(
-            student_policy.model, images, img_masks, tokens, masks, noise, t_one
-        )
-
-        # Student's clean action
-        a_student = noise - v_student  # [B, T, D]
-
-        # Loss only on true action dimensions (not padding)
+        x0 = policy.prepare_action(batch)           # [B, T, D] clean action
+        B, T, D = x0.shape
+        device = x0.device
         d = self.action_dim
-        loss = F.mse_loss(a_student[:, :, :d], a_teacher[:, :, :d])
+
+        noise = policy.model.sample_noise(x0.shape, device)   # [B, T, D]
+
+        # ── FM Loss ──────────────────────────────────────────────────────────
+        # 랜덤 t에서 표준 flow matching: Fθ(x_t, s=t, t=t) → (ε - x0)
+        t_fm = torch.rand(B, device=device, dtype=x0.dtype)         # [B]
+        t_bc = t_fm[:, None, None]
+        x_t  = t_bc * noise + (1.0 - t_bc) * x0                    # [B, T, D]
+        target_fm = noise - x0                                       # [B, T, D]
+
+        # FM loss: phi_s를 사용하지 않음 — action expert가 FM behavior를 유지하도록
+        # phi_s는 shortcut student에서만 gradient를 받아야 안정적으로 학습됨
+        v_fm = get_velocity(
+            policy.model, images, img_masks, tokens, masks,
+            x_t, t_fm, s=t_fm,
+            target_time_emb=None,   # FM loss는 phi_s 없이 — circular dependency 방지
+        )
+        loss_fm = F.mse_loss(v_fm[:, :, :d], target_fm[:, :, :d])
+
+        # ── Shortcut Loss ─────────────────────────────────────────────────────
+        # x1 = ε (pure noise), 2-step Euler self-distillation
+        x1 = noise
+        t1   = torch.ones(B,  device=device, dtype=x0.dtype)       # t=1
+        t05  = torch.full((B,), 0.5, device=device, dtype=x0.dtype)  # t=0.5
+        s_zero = torch.zeros(B, device=device, dtype=x0.dtype)      # s=0 (1-NFE mode)
+
+        with torch.no_grad():
+            # Teacher: pure FM trajectory (phi_s 없음) — stable target 보장
+            # phi_s를 teacher에 쓰면 teacher target 자체가 흔들리는 moving-target 문제 발생
+            v1 = get_velocity(
+                policy.model, images, img_masks, tokens, masks,
+                x1, t1, s=t1,
+                target_time_emb=None,   # teacher는 phi_s 없이
+            )
+            # midpoint via Euler half-step
+            x05 = x1 - 0.5 * v1                                     # [B, T, D]
+
+            v05 = get_velocity(
+                policy.model, images, img_masks, tokens, masks,
+                x05, t05, s=t05,
+                target_time_emb=None,   # teacher는 phi_s 없이
+            )
+            # trapezoidal average → better marginal velocity estimate
+            v_target = 0.5 * (v1 + v05)                             # [B, T, D]
+
+        # 1-NFE prediction: phi_s(s=0)만 gradient 받음 — s=0만 학습
+        v_1nfe = get_velocity(
+            policy.model, images, img_masks, tokens, masks,
+            x1, t1, s=s_zero,   # s=0 → 1-NFE mode
+            target_time_emb=target_time_emb,   # student에만 phi_s 사용
+        )
+        loss_shortcut = F.mse_loss(v_1nfe[:, :, :d], v_target[:, :, :d])
+
+        # ── Combined Loss ─────────────────────────────────────────────────────
+        alpha, lam = self.alpha, self.lam
+        loss = alpha * loss_fm + (1.0 - alpha) * lam * loss_shortcut
 
         return {
             "loss": loss,
-            "v_teacher_norm": v_teacher[:, :, :d].norm().detach(),
-            "v_student_norm": v_student[:, :, :d].norm().detach(),
-            "a_mse_vs_gt": F.mse_loss(a_student[:, :, :d].detach(), actions[:, :, :d]).detach(),
+            "loss_fm": loss_fm.detach(),
+            "loss_shortcut": loss_shortcut.detach(),
+            "v_fm_norm": v_fm[:, :, :d].norm().detach(),
+            "v_1nfe_norm": v_1nfe[:, :, :d].norm().detach(),
+            "v_target_norm": v_target[:, :, :d].norm().detach(),
         }

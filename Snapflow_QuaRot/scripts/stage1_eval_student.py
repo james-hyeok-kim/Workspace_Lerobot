@@ -44,6 +44,29 @@ N_ACTION_STEPS = 10
 NUM_INFERENCE_STEPS = 1  # SnapFlow: 1-NFE
 
 
+def _patch_embed_image(policy):
+    """Fix transformers 4.57.6 API: get_image_features() now returns plain Tensor."""
+    pali_with_expert = policy.model.paligemma_with_expert
+
+    def patched_embed_image(image):
+        out_dtype = image.dtype
+        if image.dtype != torch.float32:
+            image = image.to(torch.float32)
+        pali = pali_with_expert.paligemma
+        image_outputs = pali.model.get_image_features(image)
+        if hasattr(image_outputs, "pooler_output"):
+            features = image_outputs.pooler_output * pali.config.text_config.hidden_size ** 0.5
+        else:
+            # New API (4.57.6): returns projected_features / sqrt(hidden_size)
+            features = image_outputs * pali.config.text_config.hidden_size ** 0.5
+        if features.dtype != out_dtype:
+            features = features.to(out_dtype)
+        return features
+
+    pali_with_expert.embed_image = patched_embed_image
+    print("[INFO] embed_image patched for transformers API compatibility")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pretrained_path", default=PRETRAINED_PATH)
@@ -78,6 +101,7 @@ def main():
     policy_cfg.pretrained_path = args.pretrained_path
     policy_cfg.device = args.device
     policy_cfg.use_amp = False
+    policy_cfg.compile_model = False   # eager mode: avoids torch.compile retrace on method patches
     policy_cfg.n_action_steps = N_ACTION_STEPS
     policy_cfg.num_inference_steps = NUM_INFERENCE_STEPS
 
@@ -88,29 +112,66 @@ def main():
 
     policy = make_policy(cfg=policy_cfg, env_cfg=env_cfg)
 
+    # Fix transformers 4.57.6 API in eager mode (safe: no compiled graph to retrace)
+    _patch_embed_image(policy)
+
     # Load student weights
     print(f"[INFO] Loading student weights from {ckpt_path}")
     student_state = load_file(str(ckpt_path))
-    missing, unexpected = policy.load_state_dict(student_state, strict=False)
+
+    # Split TTE state from policy state
+    tte_state = {k[len("target_time_emb."):]: v
+                 for k, v in student_state.items()
+                 if k.startswith("target_time_emb.")}
+    policy_state = {k: v for k, v in student_state.items()
+                    if not k.startswith("target_time_emb.")}
+
+    missing, unexpected = policy.load_state_dict(policy_state, strict=False)
     if missing:
         print(f"[WARN] Missing keys: {len(missing)} (ok if just normalization stats)")
     if unexpected:
         print(f"[WARN] Unexpected keys: {len(unexpected)}")
 
-    policy.eval()
+    # Inject phi_s(s=0) into bias in-place for 1-NFE mode.
+    # V4: inject into action_out_proj.bias (32-dim, action space)
+    # V3 legacy: inject into time_mlp_out.bias (2048-dim, conditioning space — corrupts AdaRMS)
+    original_bias = None
+    injected_bias_param = None  # track which param was modified for restore
+    if tte_state:
+        from snapflow.target_time_emb import TargetTimeEmbedding
+        mlp_in_shape = tte_state["mlp_in.weight"].shape   # [hidden_dim, sinusoidal_dim]
+        mlp_out_shape = tte_state["mlp_out.weight"].shape  # [out_dim, hidden_dim]
+        sinusoidal_dim = mlp_in_shape[1]
+        hidden_dim = mlp_in_shape[0]
+        out_dim = mlp_out_shape[0]
+        is_legacy_v3 = (out_dim == sinusoidal_dim == hidden_dim)
 
-    # Disable torch.compile
-    import torch._dynamo as _dynamo
-    _dynamo.reset()
-    inner = getattr(policy, "model", None)
-    if inner is not None:
-        for attr in ("sample_actions", "forward"):
-            fn = getattr(inner, attr, None)
-            if fn is not None:
-                orig = (getattr(fn, "_torchdynamo_orig_callable", None)
-                        or getattr(fn, "_orig_mod", None))
-                if orig is not None:
-                    setattr(inner, attr, orig)
+        if is_legacy_v3:
+            target_time_emb = TargetTimeEmbedding(embed_dim=out_dim).to(args.device)
+            target_time_emb.load_state_dict(tte_state)
+            target_time_emb.eval()
+            print(f"[WARN] Legacy V3 TTE (embed_dim={out_dim}): injecting into time_mlp_out.bias — AdaRMS corrupted!")
+            with torch.no_grad():
+                phi_s_zero = target_time_emb(torch.tensor([0.0], device=args.device)).squeeze(0)
+            injected_bias_param = policy.model.time_mlp_out.bias
+        else:
+            target_time_emb = TargetTimeEmbedding(
+                out_dim=out_dim, sinusoidal_dim=sinusoidal_dim, hidden_dim=hidden_dim
+            ).to(args.device)
+            target_time_emb.load_state_dict(tte_state)
+            target_time_emb.eval()
+            print(f"[INFO] V4 TTE loaded (out_dim={out_dim}, sinusoidal_dim={sinusoidal_dim})")
+            with torch.no_grad():
+                phi_s_zero = target_time_emb(torch.tensor([0.0], device=args.device)).squeeze(0)
+            injected_bias_param = policy.model.action_out_proj.bias
+
+        original_bias = injected_bias_param.data.clone()
+        injected_bias_param.data.add_(phi_s_zero.to(injected_bias_param.dtype))
+        print(f"[INFO] phi_s(s=0) norm={phi_s_zero.norm():.4f} injected into {injected_bias_param.shape}")
+    else:
+        print("[INFO] No target_time_emb in checkpoint — FM-only mode")
+
+    policy.eval()
 
     preprocessor, postprocessor = make_pre_post_processors(
         policy_cfg=policy_cfg,
@@ -140,6 +201,10 @@ def main():
                 env.close()
             except Exception:
                 pass
+
+    # Restore bias (clean up in-place modification)
+    if original_bias is not None and injected_bias_param is not None:
+        injected_bias_param.data.copy_(original_bias)
 
     overall = eval_info.get("overall", {})
     pc = overall.get("pc_success", float("nan"))

@@ -45,6 +45,13 @@ def main():
     parser.add_argument("--save_every", type=int, default=1000)
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--alpha", type=float, default=0.5,
+                        help="FM vs shortcut mixing ratio (논문 기본값=0.5)")
+    parser.add_argument("--lam", type=float, default=0.1,
+                        help="Shortcut loss weight lambda (논문 기본값=0.1)")
+    parser.add_argument("--warmstart_ckpt", default=None,
+                        help="Optional: load policy weights from prior ckpt before training "
+                             "(e.g., artifacts/stage1_student.safetensors for V4 shortcut phase)")
     args = parser.parse_args()
 
     steps = args.max_steps if args.max_steps is not None else args.train_steps
@@ -61,6 +68,9 @@ def main():
         save_every=args.save_every,
         num_workers=args.num_workers,
         seed=args.seed,
+        alpha=args.alpha,
+        lam=args.lam,
+        warmstart_ckpt=args.warmstart_ckpt,
     )
 
 
