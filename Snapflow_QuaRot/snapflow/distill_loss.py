@@ -164,6 +164,17 @@ class SnapFlowLoss(nn.Module):
         )
         loss_fm = F.mse_loss(v_fm[:, :, :d], target_fm[:, :, :d])
 
+        # lam=0이면 shortcut forward pass 전부 skip (3번 forward 절약 → ~4x speedup)
+        if self.lam == 0.0:
+            return {
+                "loss": loss_fm,
+                "loss_fm": loss_fm.detach(),
+                "loss_shortcut": torch.zeros((), device=device),
+                "v_fm_norm": v_fm[:, :, :d].norm().detach(),
+                "v_1nfe_norm": torch.zeros((), device=device),
+                "v_target_norm": torch.zeros((), device=device),
+            }
+
         # ── Shortcut Loss ─────────────────────────────────────────────────────
         # x1 = ε (pure noise), 2-step Euler self-distillation
         x1 = noise

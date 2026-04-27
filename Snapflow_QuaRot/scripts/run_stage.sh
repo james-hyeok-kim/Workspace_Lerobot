@@ -67,7 +67,18 @@ case "$STAGE" in
            --start_seed 1000 \
            --output_dir results/stage5 ;;
     6) python scripts/stage6_e2e.py --config configs/stage6_e2e.yaml ;;
+    6r) python scripts/stage6_snapflow_rotation_only.py \
+           --device cuda:1 \
+           --task_ids 0 1 2 3 4 5 6 7 8 9 \
+           --n_episodes 10 --batch_size 10 \
+           --start_seed 1000 \
+           --output_dir results/stage6_rotation_only ;;
+    5b) python scripts/stage5b_snapflow_llm_w4a4.py \
+           --task_ids 0 1 2 3 4 5 6 7 8 9 \
+           --n_episodes 10 --batch_size 10 \
+           --start_seed 1000 \
+           --output_dir results/stage5b ;;
     *)
-        echo "Unknown stage: $STAGE (must be 0–6)"
+        echo "Unknown stage: $STAGE (must be 0–6, 6r, 5b)"
         exit 1 ;;
 esac

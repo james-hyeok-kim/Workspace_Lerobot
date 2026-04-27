@@ -39,6 +39,12 @@ ACTION_KEY = "action"
 class LiberoHDF5Dataset(Dataset):
     """Streams training samples from LIBERO-10 HDF5 demo files."""
 
+    _TOKENIZER_CACHE = (
+        "/home/jovyan/.cache/huggingface/hub"
+        "/models--google--paligemma-3b-pt-224"
+        "/snapshots/35e4f46485b4d07967e7e9935bc3786aad50687c"
+    )
+
     def __init__(
         self,
         dataset_path: str,
@@ -84,9 +90,11 @@ class LiberoHDF5Dataset(Dataset):
             self.state_q01 = stats["q01"].numpy().astype(np.float32)
             self.state_q99 = stats["q99"].numpy().astype(np.float32)
 
-        # Load tokenizer
+        # Load tokenizer (로컬 캐시 우선, 없으면 HF에서 다운로드)
         from transformers import AutoTokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+        local_cache = Path(self._TOKENIZER_CACHE)
+        tok_path = str(local_cache) if local_cache.exists() else tokenizer_name
+        self.tokenizer = AutoTokenizer.from_pretrained(tok_path, local_files_only=local_cache.exists())
 
     def _normalize_state(self, state: np.ndarray) -> np.ndarray:
         """Quantile normalize to [-1, 1]."""

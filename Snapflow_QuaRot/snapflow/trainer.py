@@ -119,11 +119,18 @@ def _patch_embed_image(policy):
     log.info("embed_image patched for transformers API compatibility")
 
 
-def _freeze_vlm_unfreeze_expert(policy):
+def _freeze_vlm_unfreeze_expert(policy, freeze_time_mlp: bool = False):
     """VLM backbone freeze, action expert + φs만 학습.
 
     논문: "freezes the VLM backbone and trains only the action expert
     and φs — about 10% of parameters"
+
+    Args:
+        freeze_time_mlp: V5 fix — freeze time_mlp_in/time_mlp_out to prevent
+            adarms_cond corruption. use_adarms=True for action expert means ANY
+            gradient change to time_mlp weights corrupts AdaRMS conditioning at
+            ALL timesteps, causing 0% performance even at NFE=10.
+            Set True when doing shortcut training; False for FM-only training.
     """
     # 전체 freeze
     for p in policy.parameters():
@@ -135,9 +142,14 @@ def _freeze_vlm_unfreeze_expert(policy):
         inner.paligemma_with_expert.gemma_expert,
         inner.action_in_proj,
         inner.action_out_proj,
-        inner.time_mlp_in,
-        inner.time_mlp_out,
     ]
+    # V5: only unfreeze time_mlp if NOT doing shortcut training
+    # time_mlp gradient → adarms_cond corruption → 0% at ALL NFE after 5K steps
+    if not freeze_time_mlp:
+        modules_to_train += [inner.time_mlp_in, inner.time_mlp_out]
+    else:
+        log.info("V5: time_mlp_in/time_mlp_out FROZEN (adarms_cond protection)")
+
     for m in modules_to_train:
         for p in m.parameters():
             p.requires_grad_(True)
@@ -163,6 +175,7 @@ def train(
     alpha: float = ALPHA,
     lam: float = LAM,
     warmstart_ckpt: str | None = None,
+    freeze_time_mlp: bool = False,
 ):
     _setup_paths()
 
@@ -200,7 +213,7 @@ def train(
             log.info(f"Warmstart from {warmstart_ckpt}: missing={len(missing)}, unexpected={len(unexpected)}")
 
     # VLM freeze, action expert만 학습
-    _freeze_vlm_unfreeze_expert(policy)
+    _freeze_vlm_unfreeze_expert(policy, freeze_time_mlp=freeze_time_mlp)
 
     # V4: target-time embedding φs → action output space (max_action_dim=32)
     # V3 실패 원인: embed_dim=2048으로 adarms_cond에 주입 → AdaRMS 오염

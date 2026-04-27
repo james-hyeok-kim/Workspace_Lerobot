@@ -51,7 +51,12 @@ def main():
                         help="Shortcut loss weight lambda (논문 기본값=0.1)")
     parser.add_argument("--warmstart_ckpt", default=None,
                         help="Optional: load policy weights from prior ckpt before training "
-                             "(e.g., artifacts/stage1_student.safetensors for V4 shortcut phase)")
+                             "(e.g., artifacts/stage1_student.safetensors for V5 shortcut phase)")
+    parser.add_argument("--freeze_time_mlp", action="store_true", default=False,
+                        help="V5 fix: freeze time_mlp_in/time_mlp_out during training. "
+                             "REQUIRED for shortcut phase to prevent adarms_cond corruption. "
+                             "use_adarms=True for action expert means time_mlp gradient "
+                             "corrupts AdaRMS conditioning at ALL timesteps.")
     args = parser.parse_args()
 
     steps = args.max_steps if args.max_steps is not None else args.train_steps
@@ -71,6 +76,7 @@ def main():
         alpha=args.alpha,
         lam=args.lam,
         warmstart_ckpt=args.warmstart_ckpt,
+        freeze_time_mlp=args.freeze_time_mlp,
     )
 
 
