@@ -1,0 +1,19 @@
+experiment,method,weight_bits,activation_bits,scale_format,group_size,nfe,qad_steps,pc_success,delta_vs_path_a,best_loss
+Path A (FP16),baseline,FP16,FP16,-,-,1,0,100.0,0.0,-
+FP16 NFE=10,baseline,FP16,FP16,-,-,10,0,92.4,-7.6,-
+INT4 PTQ g=16,PTQ,INT4,FP16,FP16,16,1,0,44.0,-56.0,-
+INT4 PTQ g=8,PTQ,INT4,FP16,FP16,8,1,0,71.0,-29.0,-
+INT4 PTQ g=4,PTQ,INT4,FP16,FP16,4,1,0,82.0,-18.0,-
+NVFP4 PTQ b=4,PTQ,E2M1 (FP4),FP16,FP8 E4M3,4,1,0,21.0,-79.0,-
+NVFP4 PTQ b=8,PTQ,E2M1 (FP4),FP16,FP8 E4M3,8,1,0,19.0,-81.0,-
+NVFP4 PTQ b=16,PTQ,E2M1 (FP4),FP16,FP8 E4M3,16,1,0,21.0,-79.0,-
+Ablation INT4 g=4 (llm_only),ablation,INT4 (partial),FP16,FP16,4,1,0,78.0,-22.0,-
+Ablation INT4 g=4 (expert_only),ablation,INT4 (partial),FP16,FP16,4,1,0,89.0,-11.0,-
+Ablation INT4 g=4 (expert_attn),ablation,INT4 (partial),FP16,FP16,4,1,0,86.0,-14.0,-
+Ablation INT4 g=4 (expert_mlp),ablation,INT4 (partial),FP16,FP16,4,1,0,86.0,-14.0,-
+INT4 QAD g=8 FP16 scale,QAD,INT4,FP16,FP16,8,1,500,97.0,-3.0,0.005241
+INT4 QAD g=8 INT16 scale,QAD,INT4,FP16,INT16,8,1,500,92.0,-8.0,0.003626
+INT4 QAD g=16 FP16 scale,QAD,INT4,FP16,FP16,16,1,500,86.0,-14.0,0.009405
+INT4 QAD g=16 INT16 scale,QAD,INT4,FP16,INT16,16,1,500,85.0,-15.0,0.009319
+NVFP4 QAD b=8,QAD,E2M1 (FP4),FP16,FP8 E4M3,8,1,500,79.0,-21.0,0.009139
+W4A4 QAD g=8,QAD,INT4,INT4,FP16,8,1,500,93.0,-7.0,0.013284
