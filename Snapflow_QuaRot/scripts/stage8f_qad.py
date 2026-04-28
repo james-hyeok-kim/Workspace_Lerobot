@@ -98,40 +98,108 @@ def _build_nvfp4_config(block_size: int = 8) -> dict:
     }
 
 
-def _build_w4a4_config(group_size: int = 8, scale_bits: int = None) -> dict:
+def _build_w4a4_config(group_size: int = 8, scale_bits: int = None,
+                       quant_scope: str = "expert") -> dict:
     block_sizes = {-1: group_size}
     if scale_bits is not None:
         block_sizes["scale_bits"] = scale_bits
     w4   = {"num_bits": 4, "block_sizes": block_sizes, "enable": True}
-    # per-tensor (no axis): avoids sequence-length mismatch between calib and eval
     a4   = {"num_bits": 4, "enable": True}
     fp16 = {"enable": False}
-    return {
-        "quant_cfg": {
-            "*gemma_expert*weight_quantizer": w4,
-            "*gemma_expert*input_quantizer": a4,
-            "*[kv]_bmm_quantizer": fp16,
-            "default": fp16,
-        },
-        "algorithm": "max",
-    }
+
+    if quant_scope == "full":
+        # LLM (PaliGemma) + DiT (GemmaExpert) 모두 W4A4
+        # QAD 학습은 DiT만 (LLM은 freeze 유지)
+        return {
+            "quant_cfg": {
+                "*language_model*weight_quantizer": w4,
+                "*vision_tower*weight_quantizer": w4,
+                "*multi_modal_projector*weight_quantizer": w4,
+                "*gemma_expert*weight_quantizer": w4,
+                "*language_model*input_quantizer": a4,
+                "*vision_tower*input_quantizer": a4,
+                "*multi_modal_projector*input_quantizer": a4,
+                "*gemma_expert*input_quantizer": a4,
+                "*lm_head*": fp16,
+                "*[kv]_bmm_quantizer": fp16,
+                "default": fp16,
+            },
+            "algorithm": "max",
+        }
+    else:
+        # expert only (기존 동작)
+        return {
+            "quant_cfg": {
+                "*gemma_expert*weight_quantizer": w4,
+                "*gemma_expert*input_quantizer": a4,
+                "*[kv]_bmm_quantizer": fp16,
+                "default": fp16,
+            },
+            "algorithm": "max",
+        }
+
+
+def _build_ablation_w4a4_config(ablation_mode: str, group_size: int) -> dict:
+    """Component-specific W4A4 config for ablation QAD experiments."""
+    w4 = {"num_bits": 4, "block_sizes": {-1: group_size}, "enable": True}
+    a4 = {"num_bits": 4, "enable": True}
+    fp16 = {"enable": False}
+
+    if ablation_mode == "expert_attn":
+        return {
+            "quant_cfg": {
+                "*gemma_expert*q_proj*weight_quantizer": w4,
+                "*gemma_expert*k_proj*weight_quantizer": w4,
+                "*gemma_expert*v_proj*weight_quantizer": w4,
+                "*gemma_expert*o_proj*weight_quantizer": w4,
+                "*gemma_expert*q_proj*input_quantizer": a4,
+                "*gemma_expert*k_proj*input_quantizer": a4,
+                "*gemma_expert*v_proj*input_quantizer": a4,
+                "*gemma_expert*o_proj*input_quantizer": a4,
+                "*[kv]_bmm_quantizer": fp16,
+                "default": fp16,
+            },
+            "algorithm": "max",
+        }
+    elif ablation_mode == "expert_mlp":
+        return {
+            "quant_cfg": {
+                "*gemma_expert*gate_proj*weight_quantizer": w4,
+                "*gemma_expert*up_proj*weight_quantizer": w4,
+                "*gemma_expert*down_proj*weight_quantizer": w4,
+                "*gemma_expert*gate_proj*input_quantizer": a4,
+                "*gemma_expert*up_proj*input_quantizer": a4,
+                "*gemma_expert*down_proj*input_quantizer": a4,
+                "*[kv]_bmm_quantizer": fp16,
+                "default": fp16,
+            },
+            "algorithm": "max",
+        }
+    else:
+        raise ValueError(f"Unknown ablation_mode: {ablation_mode}")
 
 
 def _apply_fake_quant(policy, quant_format: str, group_size: int, device: str,
-                      scale_bits: int = None):
+                      scale_bits: int = None, ablation_mode: str = None,
+                      quant_scope: str = "expert"):
     import modelopt.torch.quantization as mtq
 
     if quant_format == "int4":
         cfg = _build_int4_config(group_size, scale_bits=scale_bits)
         scale_label = f"INT{scale_bits}" if scale_bits else "FP16"
     elif quant_format == "w4a4":
-        cfg = _build_w4a4_config(group_size, scale_bits=scale_bits)
-        scale_label = f"W4A4-INT{scale_bits}" if scale_bits else "W4A4"
+        if ablation_mode:
+            cfg = _build_ablation_w4a4_config(ablation_mode, group_size)
+            scale_label = f"W4A4-{ablation_mode}"
+        else:
+            cfg = _build_w4a4_config(group_size, scale_bits=scale_bits, quant_scope=quant_scope)
+            scope_tag = "-full" if quant_scope == "full" else ""
+            scale_label = f"W4A4{scope_tag}-INT{scale_bits}" if scale_bits else f"W4A4{scope_tag}"
     else:
         cfg = _build_nvfp4_config(group_size)
         scale_label = "FP4"
 
-    print(f"[INFO] Applying fake-quant: {quant_format} g/b={group_size}, scale={scale_label}")
+    print(f"[INFO] Applying fake-quant: {quant_format} g/b={group_size}, scope={quant_scope}, scale={scale_label}")
 
     def calib_loop(model):
         model.eval()
@@ -241,60 +309,101 @@ def _reset_dynamo(policy):
 
 # ── QAD training loop ────────────────────────────────────────────────────────
 
+def _load_teacher_cache(cache_path: str, device: str):
+    """Load precomputed teacher velocity targets from disk."""
+    print(f"[INFO] Loading teacher cache from {cache_path}")
+    data = torch.load(cache_path, map_location="cpu")
+    batches = data["batches"]
+    print(f"[INFO] Cache loaded: {len(batches)} batches, batch_size={data['batch_size']}")
+    return batches
+
+
+def _to_device(x, device, dtype=None):
+    """Move tensor or list-of-tensors to device, optionally casting dtype."""
+    if isinstance(x, (list, tuple)):
+        return [t.to(device, dtype=dtype) if dtype and t.is_floating_point() else t.to(device)
+                for t in x]
+    return x.to(device, dtype=dtype) if dtype and x.is_floating_point() else x.to(device)
+
+
 def _qad_train(student, teacher, device: str, n_steps: int, lr: float,
-               batch_size: int, out_dir: Path, action_dim: int = 7):
+               batch_size: int, out_dir: Path, action_dim: int = 7,
+               teacher_cache: str = None):
     """
     Teacher (FP16, frozen): 2-step Euler → v_target (NFE=10 근사)
     Student (fake-quant):   NFE=1 → v_pred
     Loss: MSE(v_pred, v_target)
+
+    teacher_cache: path to precomputed cache from precompute_teacher_cache.py.
+      If set, teacher forward is skipped entirely — cache batches are used directly.
+      Teacher model can be None when cache is provided.
     """
-    dataset = LiberoHDF5Dataset(CALIB_PATH, NORMALIZER_PATH, seed=42)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,
-                        num_workers=2, drop_last=True, pin_memory=True)
-    data_iter = iter(loader)
+    # ── Data source: cache or live dataset ───────────────────────────────────
+    if teacher_cache:
+        cached_batches = _load_teacher_cache(teacher_cache, device)
+        cache_iter = iter(cached_batches * ((n_steps // len(cached_batches)) + 2))
+        use_cache = True
+    else:
+        dataset = LiberoHDF5Dataset(CALIB_PATH, NORMALIZER_PATH, seed=42)
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,
+                            num_workers=2, drop_last=True, pin_memory=True)
+        data_iter = iter(loader)
+        use_cache = False
 
     trainable = [p for p in student.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(trainable, lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_steps)
 
     student.train()
-    teacher.eval()
+    if teacher is not None:
+        teacher.eval()
 
     log_rows = []
     best_loss = float("inf")
     best_ckpt = out_dir / "best_student.pt"
 
     for step in range(1, n_steps + 1):
-        try:
-            batch = next(data_iter)
-        except StopIteration:
-            data_iter = iter(loader)
-            batch = next(data_iter)
+        if use_cache:
+            # ── Cached path: load precomputed teacher targets ─────────────
+            entry     = next(cache_iter)
+            images    = _to_device(entry["images"],    device, dtype=torch.float32)
+            img_masks = _to_device(entry["img_masks"], device)
+            tokens    = entry["tokens"].to(device)
+            masks     = entry["masks"].to(device)
+            noise     = entry["noise"].to(device, dtype=torch.float32)
+            v_target  = entry["v_target"].to(device, dtype=torch.float32)
+            B  = noise.shape[0]
+            t1 = torch.ones(B, device=device)
+        else:
+            # ── Live path: run teacher forward each step ──────────────────
+            try:
+                batch = next(data_iter)
+            except StopIteration:
+                data_iter = iter(loader)
+                batch = next(data_iter)
 
-        batch = {k: v.to(device) if hasattr(v, "to") else v for k, v in batch.items()}
+            batch = {k: v.to(device) if hasattr(v, "to") else v for k, v in batch.items()}
 
-        images, img_masks = student._preprocess_images(batch)
-        tokens = batch[OBS_LANGUAGE_TOKENS]
-        masks  = batch[OBS_LANGUAGE_ATTENTION_MASK]
-        actions = student.prepare_action(batch)
-        B = actions.shape[0]
+            images, img_masks = student._preprocess_images(batch)
+            tokens  = batch[OBS_LANGUAGE_TOKENS]
+            masks   = batch[OBS_LANGUAGE_ATTENTION_MASK]
+            actions = student.prepare_action(batch)
+            B = actions.shape[0]
 
-        noise = student.model.sample_noise(actions.shape, device)
+            noise = student.model.sample_noise(actions.shape, device)
+            t1    = torch.ones(B, device=device, dtype=actions.dtype)
+            t05   = torch.full((B,), 0.5, device=device, dtype=actions.dtype)
 
-        t1  = torch.ones(B, device=device, dtype=actions.dtype)
-        t05 = torch.full((B,), 0.5, device=device, dtype=actions.dtype)
-
-        # ── Teacher: FP16 2-step Euler → v_target ────────────────────────
-        with torch.no_grad():
-            v1 = get_velocity(teacher.model, images, img_masks, tokens, masks,
-                              noise, t1, s=t1)                      # 1st step
-            x05 = noise - 0.5 * v1                                  # midpoint
-            v05 = get_velocity(teacher.model, images, img_masks, tokens, masks,
-                               x05, t05, s=t05)                     # 2nd step
-            v_target = 0.5 * (v1 + v05)                             # trapezoidal avg
+            with torch.no_grad():
+                v1  = get_velocity(teacher.model, images, img_masks, tokens, masks,
+                                   noise, t1, s=t1)
+                x05 = noise - 0.5 * v1
+                v05 = get_velocity(teacher.model, images, img_masks, tokens, masks,
+                                   x05, t05, s=t05)
+                v_target = 0.5 * (v1 + v05)
 
         # ── Student: fake-quant NFE=1 ─────────────────────────────────────
-        s0 = torch.zeros(B, device=device, dtype=actions.dtype)     # s=0 → 1-NFE
+        s0     = torch.zeros(B, device=device)
         v_pred = get_velocity(student.model, images, img_masks, tokens, masks,
                               noise, t1, s=s0)
 
@@ -316,7 +425,6 @@ def _qad_train(student, teacher, device: str, n_steps: int, lr: float,
             best_loss = loss_val
             torch.save(student.state_dict(), best_ckpt)
 
-    # final checkpoint
     torch.save(student.state_dict(), out_dir / "final_student.pt")
     print(f"[INFO] Best loss={best_loss:.6f}  saved → {best_ckpt}")
 
@@ -335,6 +443,10 @@ def main():
                         help="group_size for INT4 / block_size for NVFP4")
     parser.add_argument("--scale_bits", type=int, default=None,
                         help="scale precision bits for INT4 (None=FP16, 16=INT16)")
+    parser.add_argument("--quant_scope", choices=["expert", "full"], default="expert",
+                        help="expert=DiT only W4A4; full=LLM+DiT both W4A4 (QAD trains DiT only)")
+    parser.add_argument("--ablation_mode", choices=["expert_attn", "expert_mlp"], default=None,
+                        help="w4a4 component ablation (only used with --quant_format w4a4)")
     parser.add_argument("--n_steps", type=int, default=500)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--train_batch_size", type=int, default=4)
@@ -346,11 +458,22 @@ def main():
     parser.add_argument("--output_dir", default=None)
     parser.add_argument("--skip_train", action="store_true",
                         help="skip training, load best_student.pt and eval only")
+    parser.add_argument("--teacher_cache", default=None,
+                        help="path to precomputed teacher cache (.pt) from precompute_teacher_cache.py. "
+                             "If set, teacher model is not loaded — saves ~30 GB GPU memory.")
+    parser.add_argument("--llm_ckpt", default=None,
+                        help="Phase 2 모드: stage8g_llm_qad.py의 best_llm_student.pt 경로. "
+                             "제공시 W4A4 LLM (Phase 1 학습된) + W4A4 DiT (Phase 2 학습) 구조. "
+                             "LLM quantizer 상태를 Phase 1에서 복원하고 DiT만 QAD 학습.")
     args = parser.parse_args()
 
-    scale_suffix = f"_s{args.scale_bits}" if args.scale_bits else ""
+    scale_suffix    = f"_s{args.scale_bits}" if args.scale_bits else ""
+    scope_suffix    = "_full" if args.quant_scope == "full" else ""
+    ablation_suffix = f"_{args.ablation_mode}" if args.ablation_mode else ""
+    phase2_suffix   = "_phase2" if args.llm_ckpt else ""
     out_dir = Path(args.output_dir or
-                   f"results/stage8f_{args.quant_format}_g{args.group_size}{scale_suffix}")
+                   f"results/stage8f_{args.quant_format}_g{args.group_size}"
+                   f"{scope_suffix}{scale_suffix}{ablation_suffix}{phase2_suffix}")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── load base policy ──────────────────────────────────────────────────
@@ -375,24 +498,42 @@ def main():
     print("[INFO] Path A loaded into student")
 
     if not args.skip_train:
-        # ── build FP16 teacher (frozen copy before quantization) ──────────
-        print("[INFO] Building FP16 teacher ...")
-        teacher = make_policy(cfg=policy_cfg, env_cfg=env_cfg)
-        _patch_embed_image(teacher)
-        teacher.load_state_dict(sd, strict=False)
-        teacher.to(args.device)
-        teacher.eval()
-        for p in teacher.parameters():
-            p.requires_grad_(False)
+        # ── build FP16 teacher (skip if cache provided) ───────────────────
+        if args.teacher_cache:
+            print(f"[INFO] Using precomputed teacher cache: {args.teacher_cache}")
+            teacher = None
+        else:
+            print("[INFO] Building FP16 teacher ...")
+            teacher = make_policy(cfg=policy_cfg, env_cfg=env_cfg)
+            _patch_embed_image(teacher)
+            teacher.load_state_dict(sd, strict=False)
+            teacher.to(args.device)
+            teacher.eval()
+            for p in teacher.parameters():
+                p.requires_grad_(False)
 
         # ── apply fake-quant to student ───────────────────────────────────
-        _apply_fake_quant(student, args.quant_format, args.group_size, args.device,
-                          scale_bits=args.scale_bits)
-        _freeze_for_qad(student)
+        if args.llm_ckpt:
+            # Phase 2: LLM+DiT 모두 W4A4, Phase 1 학습된 LLM 가중치 복원
+            print(f"[INFO] Phase 2 mode: applying full W4A4 (LLM+DiT), "
+                  f"then loading Phase 1 LLM from {args.llm_ckpt}")
+            _apply_fake_quant(student, "w4a4", args.group_size, args.device,
+                              scale_bits=args.scale_bits, quant_scope="full")
+            llm_sd = torch.load(args.llm_ckpt, map_location="cpu")
+            student.load_state_dict(llm_sd, strict=False)
+            # strict=False: LLM 가중치+quantizer → Phase 1 값으로 복원
+            #               DiT quantizer → 방금 calibration 값 유지 (FP16 Path A 기준)
+            print(f"[INFO] Phase 1 LLM weights loaded. "
+                  f"DiT quantizers calibrated from Path A.")
+        else:
+            _apply_fake_quant(student, args.quant_format, args.group_size, args.device,
+                              scale_bits=args.scale_bits, ablation_mode=args.ablation_mode,
+                              quant_scope=args.quant_scope)
+        _freeze_for_qad(student)  # LLM freeze, DiT 학습 — Phase 1/2 모두 동일
         _reset_dynamo(student)
         student.to(args.device)
 
-        print(f"\n[INFO] QAD: {args.quant_format} g={args.group_size} | "
+        print(f"\n[INFO] QAD: {args.quant_format} g={args.group_size} scope={args.quant_scope} | "
               f"steps={args.n_steps} | lr={args.lr}")
         best_ckpt = _qad_train(
             student=student,
@@ -402,17 +543,20 @@ def main():
             lr=args.lr,
             batch_size=args.train_batch_size,
             out_dir=out_dir,
+            teacher_cache=args.teacher_cache,
         )
 
         # unload teacher to free memory
-        del teacher
+        if teacher is not None:
+            del teacher
         torch.cuda.empty_cache()
 
     else:
         best_ckpt = out_dir / "best_student.pt"
         print(f"[INFO] skip_train: loading {best_ckpt}")
         _apply_fake_quant(student, args.quant_format, args.group_size, args.device,
-                          scale_bits=args.scale_bits)
+                          scale_bits=args.scale_bits, ablation_mode=args.ablation_mode,
+                          quant_scope=args.quant_scope)
         best_sd = torch.load(best_ckpt, map_location="cpu")
         student.load_state_dict(best_sd, strict=False)
 
@@ -475,6 +619,8 @@ def main():
         "stage": "stage8f_qad",
         "quant_format": args.quant_format,
         "group_size": args.group_size,
+        "quant_scope": args.quant_scope,
+        "ablation_mode": args.ablation_mode,
         "scale_bits": args.scale_bits,
         "scale_label": scale_label,
         "n_steps": args.n_steps,
@@ -487,7 +633,7 @@ def main():
             "nvfp4_b8_ptq": 19.0,
         },
     }
-    out_path = out_dir / f"libero_10_qad_{args.quant_format}_g{args.group_size}_{scale_label}.json"
+    out_path = out_dir / f"libero_10_qad_{args.quant_format}_g{args.group_size}{scope_suffix}_{scale_label}.json"
     with open(out_path, "w") as f:
         json.dump(result, f, indent=2, default=str)
     print(f"\n[SAVED] {out_path}")

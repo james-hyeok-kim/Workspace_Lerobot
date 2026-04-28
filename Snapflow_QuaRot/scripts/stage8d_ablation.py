@@ -169,6 +169,25 @@ def _build_ablation_config(mode: str, group_size: int, quant_type: str = "w4a16"
             },
             "algorithm": "max",
         }
+    elif mode == "both":
+        # LLM + Expert 모두 INT4 (전체 양자화)
+        return {
+            "quant_cfg": {
+                "*language_model*weight_quantizer": w4,
+                "*vision_tower*weight_quantizer": w4,
+                "*multi_modal_projector*weight_quantizer": w4,
+                "*gemma_expert*weight_quantizer": w4,
+                "*action_in_proj*weight_quantizer": w4,
+                "*action_out_proj*weight_quantizer": w4,
+                "*language_model*input_quantizer": a4,
+                "*vision_tower*input_quantizer": a4,
+                "*multi_modal_projector*input_quantizer": a4,
+                "*gemma_expert*input_quantizer": a4,
+                "*lm_head*": fp16,
+                "default": fp16,
+            },
+            "algorithm": "max",
+        }
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
@@ -232,7 +251,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["llm_only", "expert_only", "fp16",
                                             "expert_attn", "expert_mlp", "action_proj",
-                                            "llm_vision", "llm_lang"],
+                                            "llm_vision", "llm_lang", "both"],
                         required=True, help="ablation mode")
     parser.add_argument("--group_size", type=int, default=4)
     parser.add_argument("--quant_type", choices=["w4a16", "w4a4"], default="w4a16",
