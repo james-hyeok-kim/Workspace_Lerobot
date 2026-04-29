@@ -48,7 +48,7 @@ DEVICE = "cuda"
 N_ACTION_STEPS = 10
 NUM_INFERENCE_STEPS = 10
 _R3_SEED = 100
-OHB_MANIFEST_PATH = "artifacts/stage4_ohb_manifest.json"
+OHB_MANIFEST_PATH = "/data/jameskimh/james_lerobot_results/artifacts/stage4_ohb_manifest.json"
 CALIB_DATASET_PATH = "/data/jameskimh/james_libero_datasets/libero_10"
 NORMALIZER_STATS_PATH = (
     "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"

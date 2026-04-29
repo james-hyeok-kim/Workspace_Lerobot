@@ -268,10 +268,10 @@ Duhyeon 코드 결과 수령 후:
 
 | 조건 | Quant 방법 | init_control | 결과 디렉토리 |
 |------|-----------|:------------:|--------------|
-| mine | MTQ `NVFP4_DEFAULT_CFG` (LM+DiT) | ❌ | `results_4way/mine` |
-| mine_init | MTQ `NVFP4_DEFAULT_CFG` (LM+DiT) | ✅ | `results_4way/mine_init` |
-| dh | Duhyeon `nvfp4_bmm` forward hook | ❌ | `results_4way/dh` |
-| dh_init | Duhyeon `nvfp4_bmm` forward hook | ✅ | `results_4way/dh_init` |
+| mine | MTQ `NVFP4_DEFAULT_CFG` (LM+DiT) | ❌ | `/data/jameskimh/james_lerobot_results/quant_diff_libero_10/results_4way/mine` |
+| mine_init | MTQ `NVFP4_DEFAULT_CFG` (LM+DiT) | ✅ | `/data/jameskimh/james_lerobot_results/quant_diff_libero_10/results_4way/mine_init` |
+| dh | Duhyeon `nvfp4_bmm` forward hook | ❌ | `/data/jameskimh/james_lerobot_results/quant_diff_libero_10/results_4way/dh` |
+| dh_init | Duhyeon `nvfp4_bmm` forward hook | ✅ | `/data/jameskimh/james_lerobot_results/quant_diff_libero_10/results_4way/dh_init` |
 
 ## init_state_controller 동작 원리
 

@@ -120,13 +120,13 @@ def _apply_quarot_llm(policy, device: str):
     print(f"[INFO]   → R1 done. hidden_signs norm: {state.hidden_signs.float().norm():.2f}")
 
     # Save rotation state artifact
-    art_dir = Path("artifacts")
+    art_dir = Path("/data/jameskimh/james_lerobot_results/artifacts")
     art_dir.mkdir(exist_ok=True)
     torch.save(
         {"hidden_signs": state.hidden_signs, "head_signs": state.head_signs},
         str(art_dir / "stage2_rot_state.pt"),
     )
-    print("[INFO] Rotation state saved → artifacts/stage2_rot_state.pt")
+    print("[INFO] Rotation state saved → /data/jameskimh/james_lerobot_results/artifacts/stage2_rot_state.pt")
     return state
 
 

@@ -4,9 +4,9 @@ Combines:
   SnapFlow (NFE=1) + QuaRot(LLM+DiT, R1-R4) + OHB + W4A4
 
 Prerequisite artifacts:
-  artifacts/stage1_student.safetensors  (from stage1_snapflow_distill.py)
-  artifacts/stage4_ohb_manifest.json    (from stage4_ohb_adaln.py or auto-built)
-  artifacts/stage0_calib_stats.pt       (from stage0_baseline.py)
+  /data/jameskimh/james_lerobot_results/artifacts/stage1_student.safetensors  (from stage1_snapflow_distill.py)
+  /data/jameskimh/james_lerobot_results/artifacts/stage4_ohb_manifest.json    (from stage4_ohb_adaln.py or auto-built)
+  /data/jameskimh/james_lerobot_results/artifacts/stage0_calib_stats.pt       (from stage0_baseline.py)
 
 If stage1 student is not yet trained, consider running Stage 5 eval
 as E2E proxy (no SnapFlow, but all quant) to validate the quant pipeline.
@@ -39,7 +39,7 @@ def main(cfg_path: str):
     log.info(f"Stage 6 — E2E Integration. Config: {cfg_path}")
 
     # Pre-flight checks
-    student_ckpt = recipe.snapflow.student_ckpt or "artifacts/stage1_student.safetensors"
+    student_ckpt = recipe.snapflow.student_ckpt or "/data/jameskimh/james_lerobot_results/artifacts/stage1_student.safetensors"
     if recipe.snapflow.enabled and not Path(student_ckpt).exists():
         log.error(
             f"SnapFlow student checkpoint not found: {student_ckpt}\n"

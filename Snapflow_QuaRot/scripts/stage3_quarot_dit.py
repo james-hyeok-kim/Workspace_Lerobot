@@ -132,7 +132,7 @@ def _apply_quarot_stage3(policy, device: str):
             _apply_r3_to_layer(layer, shared_head_signs)
     print("[INFO]   → DiT R3 done")
 
-    art_dir = Path("artifacts")
+    art_dir = Path("/data/jameskimh/james_lerobot_results/artifacts")
     art_dir.mkdir(exist_ok=True)
     torch.save(
         {
@@ -142,7 +142,7 @@ def _apply_quarot_stage3(policy, device: str):
         },
         str(art_dir / "stage3_rot_state.pt"),
     )
-    print("[INFO] Rotation state saved → artifacts/stage3_rot_state.pt")
+    print("[INFO] Rotation state saved → /data/jameskimh/james_lerobot_results/artifacts/stage3_rot_state.pt")
     return llm_state, shared_head_signs
 
 

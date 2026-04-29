@@ -38,7 +38,7 @@ PATH_A = "/tmp/path_a.pt"
 DEVICE = "cuda"
 N_ACTION_STEPS = 10
 NUM_INFERENCE_STEPS = 1
-OHB_MANIFEST_PATH = "artifacts/stage8d_ohb_manifest.json"  # AdaLN 포함 확장판
+OHB_MANIFEST_PATH = "/data/jameskimh/james_lerobot_results/artifacts/stage8d_ohb_manifest.json"  # AdaLN 포함 확장판
 CALIB_DATASET_PATH = "/data/jameskimh/james_libero_datasets/libero_10"
 NORMALIZER_STATS_PATH = (
     "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"

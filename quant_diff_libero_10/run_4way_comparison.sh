@@ -25,7 +25,7 @@ COMMON=(
     --n_action_steps 10
 )
 
-OUT_BASE="results_4way"
+OUT_BASE="/data/jameskimh/james_lerobot_results/quant_diff_libero_10/results_4way"
 LOG_DIR="${OUT_BASE}/logs"
 mkdir -p "${LOG_DIR}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

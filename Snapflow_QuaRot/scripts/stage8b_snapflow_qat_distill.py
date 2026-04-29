@@ -41,14 +41,14 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 PRETRAINED_PATH = "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"
-STUDENT_CKPT    = "artifacts/stage1_student.safetensors"
+STUDENT_CKPT    = "/data/jameskimh/james_lerobot_results/artifacts/stage1_student.safetensors"
 NORMALIZER_STATS_PATH = (
     "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"
     "/policy_preprocessor_step_2_normalizer_processor.safetensors"
 )
 DATASET_PATH    = "/data/jameskimh/james_libero_datasets/libero_10"
-OUTPUT_PATH     = "artifacts/stage8b_student.safetensors"
-OHB_MANIFEST_PATH = "artifacts/stage4_ohb_manifest.json"
+OUTPUT_PATH     = "/data/jameskimh/james_lerobot_results/artifacts/stage8b_student.safetensors"
+OHB_MANIFEST_PATH = "/data/jameskimh/james_lerobot_results/artifacts/stage4_ohb_manifest.json"
 _R3_SEED        = 100
 
 

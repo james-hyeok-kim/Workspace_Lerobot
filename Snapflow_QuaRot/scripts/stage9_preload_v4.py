@@ -1,20 +1,29 @@
-"""Stage 9 v2 — QuantVLA-style W4A8 LLM PTQ + W4A4 DiT QAD (기존 checkpoint).
+"""Stage 9 v4 — Pre-load Calibration: stage8f weights 먼저 로드 후 combined quantize.
 
-[Protocol v2 — 1-pass 합성 config, algorithm=max]
-  Step 1 : DiT W4A4 + LLM W4A8 합성 config로 단일 mtq.quantize + max calibration (32 batches)
-  Step 2 : results/stage8f_w4a4_g8/best_student.pt 로드 → DiT trained weights + amax 복원
-           (LLM W4A8 amax는 Step 1 calib 값 유지)
-  Step 3 : DiT amax 보존 검증
-  Step 4 : Eval LIBERO-10 (10 task × 10 ep, NFE=1)
+[Protocol v4 — Pre-load, then combined quantize, then QAD amax 복원]
+  Step 1 : fresh policy 로드
+  Step 2 : stage8f 로드 (strict=False, plain FP16 model에 DiT QAD weights 주입)
+           - DiT weights → QAD trained (quantizer 아직 없음 → quantizer key 는 unexpected 로 무시)
+  Step 3 : mtq.quantize(combined config, max calib)
+           - DiT: QAD-trained weights 상태에서 W4A4 fake-quant + max calibration
+           - LLM: W4A4-fakequant 된 QAD-trained DiT 분포 기준 W4A8 calibration (inference 분포에 근접)
+           - DiT amax: max calib 값 (QAD 최적값 아님, 임시)
+  Step 4 : stage8f 재로드 (strict=False)
+           - DiT weights → 변동 없음 확인
+           - DiT _amax → QAD amax 로 덮어쓰기 (이번엔 quantizer 모듈 있으니 매칭됨)
+           - LLM amax → stage8f 에 LLM key 없음 → 유지
+  Step 5 : verify amax + LIBERO-10 eval
 
-v1 실패 원인:
-  - awq_lite: LIBERO 가변 sequence length로 amax shape mismatch → calib 32 batch 전부 skip
-  - 2-pass mtq.quantize: Pass 2가 DiT amax 덮어씀 + 전체 quantizer state 리셋
-Fix:
-  - algorithm="max" (shape mismatch 없음)
-  - 1-pass 합성 config (DiT W4A4 + LLM W4A8 동시 등록)
+v2 와의 차이:
+  - v2: mtq.quantize 후 stage8f 로드 → LLM calib 시 DiT 는 원본 FP16 weights
+  - v4: stage8f 로드 후 mtq.quantize → LLM calib 시 DiT 는 QAD-trained weights (inference 분포 근사)
 
-Reference: QuantVLA arXiv 2602.20309 (LLM W4A8 부분, DuQuant/ATM/OHB 미적용)
+v3 와의 차이:
+  - v3: DiT disabled 상태로 calib (DiT 는 완전 FP16)
+  - v4: DiT W4A4 enabled 상태로 calib (DiT 는 QAD weights + fake-quant)
+       → LLM 이 보는 DiT 출력이 inference 와 더 유사
+
+Reference: QuantVLA arXiv 2602.20309
 """
 import argparse
 import json
@@ -55,39 +64,26 @@ DEVICE = "cuda"
 DEFAULT_STUDENT_CKPT = "results/stage8f_w4a4_g8/best_student.pt"
 
 
-# ── quantization configs ──────────────────────────────────────────────────────
+# ── quantization config (v2 와 동일 combined config 재사용) ───────────────────
 
 def _build_combined_config(dit_group_size: int = 8) -> dict:
-    """1-pass 합성 config: DiT W4A4 + LLM/vision/projector W4A8, algorithm=max.
-
-    v1 (2-pass awq_lite) 실패 원인:
-      1. awq_lite → LIBERO 가변 seq-len에서 amax shape mismatch → 모든 calib batch skip
-      2. 2nd mtq.quantize → DiT quantizer amax 덮어씀 + 전체 state 리셋
-    Fix: 단일 호출 + max calibration (shape mismatch 없음)
-
-    로드 순서: mtq.quantize → stage8f checkpoint 로드 (strict=False)
-      - DiT keys 복원: trained weights + DiT amax (stage8f 값)
-      - LLM keys 없음 → LLM amax 는 이 config calib 값 유지
-    """
-    w4_dit    = {"num_bits": 4, "block_sizes": {-1: dit_group_size}, "enable": True}
-    a4_dit    = {"num_bits": 4, "enable": True}
-    w4_llm    = {"num_bits": 4, "block_sizes": {-1: 128, "type": "static"}, "enable": True}
-    w_fp8     = {"num_bits": (4, 3), "enable": True}  # FP8 E4M3 secondary
-    a_fp8     = {"num_bits": (4, 3), "enable": True}  # FP8 E4M3 activation
-    fp16      = {"enable": False}
+    """DiT W4A4 + LLM W4A8 combined, algorithm=max (v2 와 동일)."""
+    w4_dit = {"num_bits": 4, "block_sizes": {-1: dit_group_size}, "enable": True}
+    a4_dit = {"num_bits": 4, "enable": True}
+    w4_llm = {"num_bits": 4, "block_sizes": {-1: 128, "type": "static"}, "enable": True}
+    w_fp8  = {"num_bits": (4, 3), "enable": True}
+    a_fp8  = {"num_bits": (4, 3), "enable": True}
+    fp16   = {"enable": False}
     return {
         "quant_cfg": {
-            # DiT W4A4
             "*gemma_expert*weight_quantizer":            w4_dit,
             "*gemma_expert*input_quantizer":             a4_dit,
-            # LLM W4A8
             "*language_model*weight_quantizer":          [w4_llm, w_fp8],
             "*vision_tower*weight_quantizer":            [w4_llm, w_fp8],
             "*multi_modal_projector*weight_quantizer":   [w4_llm, w_fp8],
             "*language_model*input_quantizer":           a_fp8,
             "*vision_tower*input_quantizer":             a_fp8,
             "*multi_modal_projector*input_quantizer":    a_fp8,
-            # 제외
             "*lm_head*":             fp16,
             "*[kv]_bmm_quantizer":   fp16,
             "default":               fp16,
@@ -96,7 +92,7 @@ def _build_combined_config(dit_group_size: int = 8) -> dict:
     }
 
 
-# ── calibration loop (stage8f_qad.py:204-225 동일 패턴) ─────────────────────
+# ── calibration loop ──────────────────────────────────────────────────────────
 
 def _make_calib_loop(device: str, n_batches: int = 32):
     def calib_loop(model):
@@ -127,7 +123,6 @@ def _make_calib_loop(device: str, n_batches: int = 32):
 # ── quantizer amax snapshot / verify ─────────────────────────────────────────
 
 def _snapshot_amax(policy, pattern: str) -> dict:
-    """Snapshot _amax tensors for modules matching pattern (for before/after comparison)."""
     snap = {}
     for name, mod in policy.named_modules():
         if pattern not in name:
@@ -149,24 +144,28 @@ def _compare_amax(before: dict, after: dict, label: str):
         if v_after is None:
             changed.append(f"{k}: MISSING after")
         elif not torch.allclose(v_before.cpu(), v_after.cpu(), atol=1e-6):
-            changed.append(f"{k}: changed (max_diff={( v_after.cpu()-v_before.cpu()).abs().max():.4f})")
+            diff = (v_after.cpu() - v_before.cpu()).abs().max()
+            changed.append(f"{k}: changed (max_diff={diff:.4f})")
     if changed:
-        print(f"[WARN] {label} amax CHANGED after Pass 2 ({len(changed)} quantizers):")
+        print(f"[WARN] {label} amax CHANGED ({len(changed)} quantizers):")
         for c in changed[:5]:
             print(f"  {c}")
         if len(changed) > 5:
             print(f"  ... and {len(changed)-5} more")
     else:
-        print(f"[OK] {label} amax fully preserved across Pass 2 ({len(before)} quantizers)")
+        print(f"[OK] {label} amax fully preserved ({len(before)} quantizers)")
 
 
 def _verify_amax(policy, out_dir: Path):
-    """Report enabled quantizer amax validity. Write summary to file."""
+    """Enabled quantizer 의 amax 유효성 검증. is_enabled property 사용."""
     bad, ok = [], []
     for name, mod in policy.named_modules():
         for qname in ("input_quantizer", "weight_quantizer"):
             q = getattr(mod, qname, None)
-            if q is None or not getattr(q, "_enabled", False):
+            if q is None:
+                continue
+            # modelopt TensorQuantizer: is_enabled = not self._disabled
+            if not getattr(q, "is_enabled", False):
                 continue
             amax = getattr(q, "_amax", None)
             if amax is None or (isinstance(amax, torch.Tensor) and (amax <= 0).any()):
@@ -181,6 +180,8 @@ def _verify_amax(policy, out_dir: Path):
                 q = getattr(mod, qname, None)
                 if q is None:
                     continue
+                if not getattr(q, "is_enabled", False):
+                    continue
                 amax = getattr(q, "_amax", None)
                 if amax is None or (isinstance(amax, torch.Tensor) and (amax <= 0).any()):
                     q._amax = torch.ones(1, device=next(policy.parameters()).device)
@@ -188,6 +189,7 @@ def _verify_amax(policy, out_dir: Path):
     summary = {"valid": len(ok), "invalid": len(bad), "invalid_names": bad[:20]}
     with open(out_dir / "quantizer_amax_summary.json", "w") as f:
         json.dump(summary, f, indent=2)
+    return len(ok), len(bad)
 
 
 # ── misc utils ────────────────────────────────────────────────────────────────
@@ -223,13 +225,11 @@ def _reset_dynamo(policy):
 # ── main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="QuantVLA W4A8 LLM + W4A4 DiT QAD eval")
-    parser.add_argument("--student_ckpt", default=DEFAULT_STUDENT_CKPT,
-                        help="W4A4 DiT QAD trained student checkpoint (default: stage8f best)")
-    parser.add_argument("--output_dir", default="results/stage9_quantvla_w4a8_w4a4dit")
+    parser = argparse.ArgumentParser(description="Stage9 v4: Pre-load stage8f weights before quantize")
+    parser.add_argument("--student_ckpt", default=DEFAULT_STUDENT_CKPT)
+    parser.add_argument("--output_dir", default="results/stage9_preload_v4")
     parser.add_argument("--calib_batches", type=int, default=32)
-    parser.add_argument("--dit_group_size", type=int, default=8,
-                        help="group_size for DiT W4A4 Pass 1 (must match checkpoint)")
+    parser.add_argument("--dit_group_size", type=int, default=8)
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--task_ids", type=int, nargs="+", default=list(range(10)))
     parser.add_argument("--eval_batch_size", type=int, default=10)
@@ -243,7 +243,7 @@ def main():
 
     import modelopt.torch.quantization as mtq
 
-    # ── Load base policy (FP32) ───────────────────────────────────────────────
+    # ── Load base policy ──────────────────────────────────────────────────────
     print("[INFO] Building policy from pretrained ...")
     policy_cfg = PreTrainedConfig.from_pretrained(PRETRAINED_PATH)
     policy_cfg.pretrained_path        = PRETRAINED_PATH
@@ -267,44 +267,62 @@ def main():
 
     calib_loop = _make_calib_loop(args.device, n_batches=args.calib_batches)
 
-    # ── Step 1: DiT W4A4 + LLM W4A8 합성 config, 단일 mtq.quantize + max calib ──
-    # v1 실패: 2-pass awq_lite → amax shape mismatch(32 batch 전부 skip) + DiT amax 덮어씀
-    # v2 fix:  1-pass max → shape mismatch 없음, 단일 호출로 state 리셋 없음
-    print(f"\n[Step 1] Combined DiT-W4A4 + LLM-W4A8 fake-quant + max calibration "
+    # ── Step 2: stage8f 를 plain FP16 model 에 먼저 로드 ─────────────────────
+    # DiT QAD-trained weights 가 calibration 전에 모델에 주입됨
+    # quantizer key 는 아직 없으므로 unexpected 로 처리됨 (무시, strict=False)
+    student_ckpt = Path(args.student_ckpt)
+    print(f"\n[Step 2] Pre-loading stage8f weights into plain FP16 model: {student_ckpt}")
+    ckpt_data = torch.load(student_ckpt, map_location="cpu")
+    ckpt_state = ckpt_data["model"] if isinstance(ckpt_data, dict) and "model" in ckpt_data else ckpt_data
+
+    missing_pre, unexpected_pre = policy.load_state_dict(ckpt_state, strict=False)
+    print(f"[Step 2] load_state_dict: missing={len(missing_pre)} unexpected={len(unexpected_pre)}")
+    print(f"  expected: missing=0 (plain model weight keys all match), "
+          f"unexpected>0 (quantizer keys in ckpt but not in plain model)")
+    if unexpected_pre[:3]:
+        print(f"  unexpected[:3]: {unexpected_pre[:3]}")
+
+    # ── Step 3: combined config + max calib (QAD-trained DiT 분포 기준) ───────
+    print(f"\n[Step 3] Combined DiT-W4A4 + LLM-W4A8 max calib on QAD-DiT distribution "
           f"(g_dit={args.dit_group_size}, {args.calib_batches} batches) ...")
     combined_cfg = _build_combined_config(dit_group_size=args.dit_group_size)
     mtq.quantize(policy, combined_cfg, forward_loop=calib_loop)
-    print("[Step 1] Done")
 
-    # ── Step 2: stage8f checkpoint → DiT trained weights + amax 복원 ──────────
-    # LLM 관련 keys 는 stage8f checkpoint에 없음 → LLM amax 는 Step 1 calib 값 유지
-    student_ckpt = Path(args.student_ckpt)
-    print(f"\n[Step 2] Restoring DiT QAD checkpoint: {student_ckpt}")
-    ckpt_data = torch.load(student_ckpt, map_location="cpu")
-    if isinstance(ckpt_data, dict) and "model" in ckpt_data:
-        ckpt_state = ckpt_data["model"]
-    else:
-        ckpt_state = ckpt_data
+    # snapshot calib 결과
+    llm_amax_after_calib = _snapshot_amax(policy, "language_model")
+    n_llm_valid = sum(1 for v in llm_amax_after_calib.values() if (v > 0).all())
+    dit_amax_after_calib = _snapshot_amax(policy, "gemma_expert")
+    n_dit_calib = sum(1 for v in dit_amax_after_calib.values() if (v > 0).all())
+    print(f"[Step 3] LLM valid amax: {n_llm_valid}/{len(llm_amax_after_calib)}")
+    print(f"[Step 3] DiT valid amax (max calib, 임시): {n_dit_calib}/{len(dit_amax_after_calib)}")
 
-    # Before load: snapshot LLM amax (should be preserved after load)
-    llm_amax_before = _snapshot_amax(policy, "language_model")
-    n_llm_before = sum(1 for v in llm_amax_before.values() if (v > 0).all())
-    print(f"[Step 2] LLM quantizers with valid amax before load: {n_llm_before}/{len(llm_amax_before)}")
+    # ── Step 4: stage8f 재로드 → DiT QAD amax 복원 ────────────────────────────
+    # 이번엔 quantizer 모듈이 등록됐으므로 _amax buffer key 들이 매칭됨
+    # LLM quantizer key 는 stage8f 에 없음 → LLM amax 유지
+    print(f"\n[Step 4] Re-loading stage8f → DiT QAD amax 복원 ...")
+    missing_post, unexpected_post = policy.load_state_dict(ckpt_state, strict=False)
+    print(f"[Step 4] load_state_dict: missing={len(missing_post)} unexpected={len(unexpected_post)}")
+    print(f"  expected: missing=870 (LLM quantizer keys, stage8f에 없음), unexpected=0")
 
-    missing, unexpected = policy.load_state_dict(ckpt_state, strict=False)
-    print(f"[Step 2] load_state_dict: missing={len(missing)} unexpected={len(unexpected)}")
-    if missing[:3]:
-        print(f"  missing[:3]: {missing[:3]}")
+    dit_amax_final = _snapshot_amax(policy, "gemma_expert")
+    n_dit_final = sum(1 for v in dit_amax_final.values() if (v > 0).all())
+    print(f"[Step 4] DiT valid amax after QAD restore: {n_dit_final}/{len(dit_amax_final)}")
 
-    # ── Step 3: 보존 검증 ──────────────────────────────────────────────────────
-    dit_amax_after = _snapshot_amax(policy, "gemma_expert")
-    n_valid_dit = sum(1 for v in dit_amax_after.values() if (v > 0).all())
-    print(f"[Step 3] DiT quantizers with valid amax after load: {n_valid_dit}/{len(dit_amax_after)}")
+    # LLM amax 보존 확인
+    llm_amax_final = _snapshot_amax(policy, "language_model")
+    _compare_amax(llm_amax_after_calib, llm_amax_final, "LLM language_model")
 
-    llm_amax_after = _snapshot_amax(policy, "language_model")
-    _compare_amax(llm_amax_before, llm_amax_after, "LLM language_model")
+    # DiT amax 변화 확인 (max calib → QAD amax)
+    dit_changed = sum(
+        1 for k in dit_amax_after_calib
+        if k in dit_amax_final and not torch.allclose(
+            dit_amax_after_calib[k].cpu(), dit_amax_final[k].cpu(), atol=1e-6
+        )
+    )
+    print(f"[Step 4] DiT amax changed by QAD restore: {dit_changed}/{len(dit_amax_after_calib)} "
+          f"(expected: most changed, max calib → QAD values)")
 
-    _verify_amax(policy, out_dir)
+    n_valid, n_bad = _verify_amax(policy, out_dir)
 
     # ── Eval ─────────────────────────────────────────────────────────────────
     policy.eval()
@@ -347,11 +365,11 @@ def main():
     pc = overall.get("pc_success", float("nan"))
 
     print(f"\n{'='*60}")
-    print(f"[QuantVLA W4A8 LLM + W4A4 DiT QAD] pc_success={pc:.1f}%")
+    print(f"[Stage9 v4 — Pre-load Calib] pc_success={pc:.1f}%")
     print(f"  Reference:")
     print(f"    FP16 (Path A):              100.0%")
     print(f"    W4A4 DiT QAD (stage8f):      93.0%")
-    print(f"    W4A4 LLM QAD (sequential):    0.0%")
+    print(f"    Stage9 v2 (combined max):     4.0%")
     print(f"  This result: {pc:.1f}%")
 
     per_task = eval_info.get("per_task", [])
@@ -364,9 +382,10 @@ def main():
             print(f"  task {t['task_id']:2d}: {pct:5.1f}%  fails={fails}")
 
     result = {
-        "stage": "stage9_quantvla_w4a8_w4a4dit_v2",
-        "llm_quant": "W4A8_max (INT4_blockwise128 + FP8E4M3 activation, algorithm=max)",
-        "dit_quant": f"W4A4_max (g={args.dit_group_size}, from stage8f checkpoint)",
+        "stage": "stage9_preload_v4",
+        "protocol": "v4_preload_calib",
+        "llm_quant": "W4A8_max (INT4_blockwise128 + FP8E4M3 activation, calib with QAD-DiT W4A4)",
+        "dit_quant": f"W4A4 (g={args.dit_group_size}, QAD amax restored from stage8f after calib)",
         "student_ckpt": str(student_ckpt),
         "num_inference_steps": args.num_inference_steps,
         "n_action_steps": 10,
@@ -376,10 +395,10 @@ def main():
         "reference": {
             "fp16_path_a": 100.0,
             "w4a4_dit_qad_stage8f": 93.0,
-            "w4a4_llm_qad_sequential": 0.0,
+            "stage9_v2_combined_max": 4.0,
         },
     }
-    out_path = out_dir / "libero_10_quantvla_w4a8_w4a4dit_v2.json"
+    out_path = out_dir / "libero_10_preload_v4.json"
     with open(out_path, "w") as f:
         json.dump(result, f, indent=2, default=str)
     print(f"\n[SAVED] {out_path}")

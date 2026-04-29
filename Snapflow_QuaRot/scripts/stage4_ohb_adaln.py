@@ -40,8 +40,8 @@ DEVICE = "cuda"
 N_ACTION_STEPS = 10
 NUM_INFERENCE_STEPS = 10
 _R3_SEED = 100
-CALIB_STATS_PATH = "artifacts/stage0_calib_stats.pt"
-OHB_MANIFEST_PATH = "artifacts/stage4_ohb_manifest.json"
+CALIB_STATS_PATH = "/data/jameskimh/james_lerobot_results/artifacts/stage0_calib_stats.pt"
+OHB_MANIFEST_PATH = "/data/jameskimh/james_lerobot_results/artifacts/stage4_ohb_manifest.json"
 OHB_TOP_K_PCT = 5.0
 OHB_METRIC = "kurtosis"
 
@@ -110,7 +110,7 @@ def _apply_quarot_stage4(policy, device: str):
             _apply_r3_to_layer(layer, shared_head_signs)
         print("[INFO]   → DiT R3 done")
 
-    art_dir = Path("artifacts")
+    art_dir = Path("/data/jameskimh/james_lerobot_results/artifacts")
     art_dir.mkdir(exist_ok=True)
     torch.save(
         {"llm_hidden_signs": llm_state.hidden_signs,

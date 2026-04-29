@@ -62,10 +62,12 @@ NVFP4 block scale은 `scale_bits=(4,3)` → **FP8 E4M3** (4 exponent bits, 3 man
 | **INT4 QAD g=8, FP16 scale** | INT4 | FP16 | FP16 | 1 | **97.0%** | **-3%p** |
 | NVFP4 QAD b=8 | E2M1 | FP16 | FP8 E4M3 | 1 | 79.0% | -21%p |
 | W4A4 QAD g=8 (DiT only) | INT4 | **INT4** | FP16 | 1 | **93.0%** | -7%p |
-| **W4A8 LLM + W4A4 DiT QAD** | INT4(W4A8) | **FP8(LLM)+INT4(DiT)** | FP16 | 1 | **TBD** | TBD |
+| W4A8 LLM + W4A4 DiT QAD (awq_lite, fail) | INT4(W4A8) | FP8(LLM)+INT4(DiT) | FP16 | 1 | 1.0% | -99%p |
+| **W4A8 LLM + W4A4 DiT QAD (max calib)** | INT4(W4A8) | **FP8(LLM)+INT4(DiT)** | FP16 | 1 | **TBD** | TBD |
 
 > Sequential W4A4 LLM+DiT QAD (§8): Phase 1 LLM QAD → 0%, Phase 2 DiT QAD → 0%. LLM activation INT4는 현재 방법으로 복구 불가.  
-> QuantVLA-style W4A8 LLM PTQ + W4A4 DiT QAD (§9): 진행 중. LLM은 W4A8 (FP8 activation), DiT는 stage8f 93% checkpoint 재사용.
+> QuantVLA W4A8 awq_lite 1차 (§9): **1.0%** — awq_lite 내부 amax shape mismatch로 LLM calib 32 batch 전부 skip, DiT amax 덮어씀.  
+> QuantVLA W4A8 max calib fix (§9 v2): 진행 예정. 1-pass 합성 config + algorithm=max.
 
 ---
 
@@ -383,20 +385,38 @@ CUDA_VISIBLE_DEVICES=2 python scripts/stage9_quantvla_llm_w4a8.py \
   --calib_batches 32 --eval_episodes 10 --num_inference_steps 1
 ```
 
-### 결과 (실행 후 기록)
+### 결과 v1 (awq_lite — 실패)
 
 | 항목 | 값 |
 |------|-----|
-| LLM 양자화 | W4A8 (INT4-blockwise128 + FP8 E4M3 activation, awq_lite) |
-| DiT 양자화 | W4A4 g=8 (stage8f checkpoint, 93% 훈련됨) |
+| LLM 양자화 시도 | W4A8 (INT4-blockwise128 + FP8 E4M3, awq_lite) |
+| DiT 양자화 | W4A4 g=8 (stage8f checkpoint) |
+| pc_success | **1.0%** (사실상 0%) |
+| Path A 대비 | -99%p |
+
+#### 실패 원인
+
+| 원인 | 현상 | 영향 |
+|------|------|------|
+| `awq_lite` amax shape mismatch | LIBERO 가변 sequence length로 calib 32 batch 전부 skip | LLM amax = default 1.0 (uncalibrated) |
+| `mtq.quantize` 2-pass 충돌 | Pass 2가 DiT quantizer amax 129개 덮어씀 | stage8f 훈련된 DiT amax 손실 |
+| Quantizer state 리셋 | Pass 2 후 `valid=0, invalid=0` | 모든 quantizer 비활성화 |
+
+Per-task (awq_lite):
+| Task | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|------|---|---|---|---|---|---|---|---|---|---|
+| 성공률 | 0% | 0% | 0% | 0% | 0% | 10% | 0% | 0% | 0% | 0% |
+
+### 수정 방향 (v2 — max calib, 1-pass)
+
+1. `algorithm: "awq_lite"` → `"max"` (amax shape mismatch 없음)
+2. 2-pass `mtq.quantize` → 1-pass 합성 config (DiT W4A4 + LLM W4A8 동시 등록)
+3. 합성 calib 후 stage8f checkpoint 로드 → DiT amax 복원, LLM amax 유지
+4. DiT amax 보존 검증 추가
+
+### 결과 v2 (max calib — 진행 예정)
+
+| 항목 | 값 |
+|------|-----|
 | pc_success | **TBD** |
-| Path A 대비 | TBD |
-
-Per-task: TBD
-
-### 예상 / 목표
-
-- **성공 기준**: pc_success ≥ 80%
-- **기대 범위**: 80~95% — LLM FP8 activation 은 INT4 대비 훨씬 안전, DiT 는 이미 93% 검증됨
-- **QuantVLA 논문과의 gap**: DuQuant (rotation) + ATM + OHB 미적용 → 97.6% 대비 낮을 수 있음
-- **다음 단계**: 결과 < 80% 이면 ATM + OHB 추가 (2~3일 추가), 결과 ≥ 80% 이면 종료 or DuQuant 검토
+| 예상 범위 | 70~93% (max calib만으로도 W4A8은 W4A4 대비 훨씬 안전) |

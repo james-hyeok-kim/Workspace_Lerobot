@@ -36,12 +36,12 @@ from lerobot.policies.factory import make_policy, make_pre_post_processors
 from lerobot.scripts.lerobot_eval import eval_policy_all
 
 PRETRAINED_PATH = "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"
-STUDENT_CKPT = "artifacts/stage1_student.safetensors"
+STUDENT_CKPT = "/data/jameskimh/james_lerobot_results/artifacts/stage1_student.safetensors"
 DEVICE = "cuda"
 N_ACTION_STEPS = 10
 NUM_INFERENCE_STEPS = 1   # SnapFlow: 1-NFE
 _R3_SEED = 100
-OHB_MANIFEST_PATH = "artifacts/stage4_ohb_manifest.json"
+OHB_MANIFEST_PATH = "/data/jameskimh/james_lerobot_results/artifacts/stage4_ohb_manifest.json"
 CALIB_DATASET_PATH = "/data/jameskimh/james_libero_datasets/libero_10"
 NORMALIZER_STATS_PATH = (
     "/data/jameskimh/james_lebero_pretrained/pi05_libero_finetuned"
