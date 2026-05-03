@@ -1,0 +1,6 @@
+suite,num_tasks,max_steps_per_ep,longest_demo_steps,variation_type,used_in_experiment
+libero_spatial,10,280,193,공간 위치 변형 (같은 물체 다른 위치),multisuite eval
+libero_object,10,280,254,물체 종류 변형 (같은 위치 다른 물체),multisuite eval
+libero_goal,10,300,270,목표 상태 변형 (배치/방향 등),multisuite eval
+libero_10,10,520,505,다양한 long-horizon 복합 task,모든 Stage 실험
+libero_90,90,400,373,대규모 task 집합,미사용

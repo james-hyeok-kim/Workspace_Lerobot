@@ -107,6 +107,26 @@ def _build_combined_config(llm_group_size: int = 4, dit_group_size: int = 8) -> 
     }
 
 
+def _build_llm_only_config(llm_group_size: int = 4) -> dict:
+    """W4A16 LLM only — DiT stays FP16 (no gemma_expert entries)."""
+    w4_llm = {"num_bits": 4, "block_sizes": {-1: llm_group_size}, "enable": True}
+    fp16   = {"enable": False}
+    return {
+        "quant_cfg": {
+            "*language_model*weight_quantizer":          w4_llm,
+            "*vision_tower*weight_quantizer":            w4_llm,
+            "*multi_modal_projector*weight_quantizer":   w4_llm,
+            "*language_model*input_quantizer":           fp16,
+            "*vision_tower*input_quantizer":             fp16,
+            "*multi_modal_projector*input_quantizer":    fp16,
+            "*lm_head*":                                 fp16,
+            "*[kv]_bmm_quantizer":                       fp16,
+            "default":                                   fp16,
+        },
+        "algorithm": "max",
+    }
+
+
 # ── calibration ───────────────────────────────────────────────────────────────
 
 def _make_calib_loop(device: str, n_batches: int = 32):
@@ -330,6 +350,8 @@ def main():
                         help="Override best_student.pt path for --skip_train (default: out_dir/best_student.pt)")
     parser.add_argument("--suite", default="libero_10",
                         help="LIBERO suite: libero_10 / libero_spatial / libero_object / libero_goal")
+    parser.add_argument("--llm_only", action="store_true",
+                        help="W4A16 PTQ on LLM only — DiT stays FP16, no QAD")
     parser.add_argument("--fp16_only", action="store_true",
                         help="FP16 baseline mode — skip quantization, eval Path A directly")
     parser.add_argument("--n_envs", type=int, default=None,
@@ -376,6 +398,15 @@ def main():
         # FP16 baseline: no quantization, just eval Path A
         best_loss = float("nan")
         print("[INFO] fp16_only mode — skipping quantization, evaluating FP16 directly")
+
+    elif args.llm_only:
+        # LLM-only W4A16 PTQ: quantize LLM, DiT stays FP16, no QAD
+        cfg = _build_llm_only_config(args.llm_group_size)
+        calib_loop = _make_calib_loop(args.device, args.calib_batches)
+        mtq.quantize(student, cfg, forward_loop=calib_loop)
+        _verify_amax(student, out_dir)
+        best_loss = float("nan")
+        print(f"[INFO] llm_only mode — W4A16 LLM (g={args.llm_group_size}), DiT FP16")
 
     elif not args.skip_train:
         # ── [Step 2] Combined quantization + max calib ────────────────────
@@ -497,10 +528,17 @@ def main():
     overall = eval_info.get("overall", {})
     pc = overall.get("pc_success", float("nan"))
 
-    mode_tag = "fp16" if args.fp16_only else "stage10"
+    if args.fp16_only:
+        mode_tag = "fp16"
+    elif args.llm_only:
+        mode_tag = f"llm_only_g{args.llm_group_size}"
+    else:
+        mode_tag = "stage10"
     print(f"\n{'='*60}")
     if args.fp16_only:
         print(f"[FP16 Baseline] suite={args.suite}")
+    elif args.llm_only:
+        print(f"[LLM-only PTQ] W4A16 LLM (g={args.llm_group_size}), DiT FP16 | suite={args.suite}")
     else:
         print(f"[Stage10] W4A16 LLM (g={args.llm_group_size}) + W4A4 DiT (g={args.dit_group_size}) | suite={args.suite}")
         if not (args.skip_train or math.isnan(best_loss)):
@@ -517,13 +555,13 @@ def main():
             print(f"  task {t['task_id']:2d}: {pct:5.1f}%  fails={fails}")
 
     result = {
-        "stage": "fp16_baseline" if args.fp16_only else "stage10_w4a16llm_w4a4dit_qad",
+        "stage": "fp16_baseline" if args.fp16_only else ("llm_only_ptq" if args.llm_only else "stage10_w4a16llm_w4a4dit_qad"),
         "suite": args.suite,
         "mode": mode_tag,
         "llm_quant": "FP16" if args.fp16_only else f"W4A16 INT4 blockwise-{args.llm_group_size}",
-        "dit_quant": "FP16" if args.fp16_only else f"W4A4 g={args.dit_group_size} QAD",
-        "init_ckpt": None if args.fp16_only else args.init_ckpt,
-        "n_steps": 0 if args.fp16_only else args.n_steps,
+        "dit_quant": "FP16" if (args.fp16_only or args.llm_only) else f"W4A4 g={args.dit_group_size} QAD",
+        "init_ckpt": None if (args.fp16_only or args.llm_only) else args.init_ckpt,
+        "n_steps": 0 if (args.fp16_only or args.llm_only) else args.n_steps,
         "best_loss": best_loss,
         "num_inference_steps": args.num_inference_steps,
         "n_action_steps": 10,

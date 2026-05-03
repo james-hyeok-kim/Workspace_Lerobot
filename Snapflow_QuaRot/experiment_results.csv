@@ -1,30 +1,36 @@
-experiment,method,weight_bits,activation_bits,scale_format,group_size,nfe,qad_steps,pc_success,delta_vs_path_a,best_loss,quant_scope
-Path A (FP16),baseline,FP16,FP16,-,-,1,0,100.0,0.0,-,full
-FP16 NFE=10,baseline,FP16,FP16,-,-,10,0,92.4,-7.6,-,full
-INT4 PTQ g=16,PTQ,INT4,FP16,FP16,16,1,0,44.0,-56.0,-,full
-INT4 PTQ g=8,PTQ,INT4,FP16,FP16,8,1,0,71.0,-29.0,-,full
-INT4 PTQ g=4,PTQ,INT4,FP16,FP16,4,1,0,82.0,-18.0,-,full
-NVFP4 PTQ b=4,PTQ,E2M1 (FP4),FP16,FP8 E4M3,4,1,0,21.0,-79.0,-,full
-NVFP4 PTQ b=8,PTQ,E2M1 (FP4),FP16,FP8 E4M3,8,1,0,19.0,-81.0,-,full
-NVFP4 PTQ b=16,PTQ,E2M1 (FP4),FP16,FP8 E4M3,16,1,0,21.0,-79.0,-,full
-Ablation W4A16 g=4 (llm_only),ablation,INT4,FP16,FP16,4,1,0,78.0,-22.0,-,llm_only
-Ablation W4A16 g=4 (expert_only),ablation,INT4,FP16,FP16,4,1,0,89.0,-11.0,-,expert_only
-Ablation W4A16 g=4 (expert_attn),ablation,INT4,FP16,FP16,4,1,0,86.0,-14.0,-,expert_attn
-Ablation W4A16 g=4 (expert_mlp),ablation,INT4,FP16,FP16,4,1,0,86.0,-14.0,-,expert_mlp
-Ablation W4A4 g=8 (expert_attn),ablation,INT4,INT4,FP16,8,1,0,85.0,-15.0,-,expert_attn
-Ablation W4A4 g=8 (expert_mlp),ablation,INT4,INT4,FP16,8,1,0,86.0,-14.0,-,expert_mlp
-Ablation W4A4 g=8 (llm_only),ablation,INT4,INT4,FP16,8,1,0,0.0,-100.0,-,llm_only
-INT4 QAD g=8 FP16 scale,QAD,INT4,FP16,FP16,8,1,500,97.0,-3.0,0.005241,full
-INT4 QAD g=8 INT16 scale,QAD,INT4,FP16,INT16,8,1,500,92.0,-8.0,0.003626,full
-INT4 QAD g=16 FP16 scale,QAD,INT4,FP16,FP16,16,1,500,86.0,-14.0,0.009405,full
-INT4 QAD g=16 INT16 scale,QAD,INT4,FP16,INT16,16,1,500,85.0,-15.0,0.009319,full
-NVFP4 QAD b=8,QAD,E2M1 (FP4),FP16,FP8 E4M3,8,1,500,79.0,-21.0,0.009139,full
-W4A4 QAD g=8 (DiT only),QAD,INT4,INT4,FP16,8,1,500,93.0,-7.0,0.013284,expert_only
-W4A4 LLM QAD g=8 Phase1,sequential_qad,INT4,INT4,FP16,8,1,500,0.0,-100.0,0.083677,llm_only
-W4A4 LLM+DiT QAD g=8 Phase2,sequential_qad,INT4,INT4,FP16,8,1,500,0.0,-100.0,0.075764,full
-QuantVLA W4A8 LLM + W4A4 DiT QAD (awq_lite v1),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,1.0,-99.0,-,full
-QuantVLA W4A8 LLM + W4A4 DiT QAD (max v2),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,4.0,-96.0,-,full
-Stage9 v3 Independent calib (DiT disabled),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,0.0,-100.0,-,full
-Stage9 v4 Preload calib (QAD-DiT before max),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,7.0,-93.0,-,full
-Stage9 v5 FP8 block-wise act b=32 (vision_tower amax bug),combined,INT4(W4A8)+INT4(W4A4),FP8block32(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,0.0,-100.0,-,full
-Stage10 W4A16 LLM (g=4) + W4A4 DiT QAD (g=8),combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,90.0,-10.0,0.013014,full
+experiment,method,weight_bits,activation_bits,scale_format,group_size,nfe,qad_steps,pc_success,delta_vs_path_a,best_loss,quant_scope,suite,ep_per_task,n_envs,max_steps
+Path A (FP16),baseline,FP16,FP16,-,-,1,0,100.0,0.0,-,full,libero_10,10,10,520
+FP16 NFE=10,baseline,FP16,FP16,-,-,10,0,92.4,-7.6,-,full,libero_10,10,10,520
+INT4 PTQ g=16,PTQ,INT4,FP16,FP16,16,1,0,44.0,-56.0,-,full,libero_10,10,10,520
+INT4 PTQ g=8,PTQ,INT4,FP16,FP16,8,1,0,71.0,-29.0,-,full,libero_10,10,10,520
+INT4 PTQ g=4,PTQ,INT4,FP16,FP16,4,1,0,82.0,-18.0,-,full,libero_10,10,10,520
+NVFP4 PTQ b=4,PTQ,E2M1 (FP4),FP16,FP8 E4M3,4,1,0,21.0,-79.0,-,full,libero_10,10,10,520
+NVFP4 PTQ b=8,PTQ,E2M1 (FP4),FP16,FP8 E4M3,8,1,0,19.0,-81.0,-,full,libero_10,10,10,520
+NVFP4 PTQ b=16,PTQ,E2M1 (FP4),FP16,FP8 E4M3,16,1,0,21.0,-79.0,-,full,libero_10,10,10,520
+Ablation W4A16 g=4 (llm_only),ablation,INT4,FP16,FP16,4,1,0,78.0,-22.0,-,llm_only,libero_10,10,10,520
+Ablation W4A16 g=4 (expert_only),ablation,INT4,FP16,FP16,4,1,0,89.0,-11.0,-,expert_only,libero_10,10,10,520
+Ablation W4A16 g=4 (expert_attn),ablation,INT4,FP16,FP16,4,1,0,86.0,-14.0,-,expert_attn,libero_10,10,10,520
+Ablation W4A16 g=4 (expert_mlp),ablation,INT4,FP16,FP16,4,1,0,86.0,-14.0,-,expert_mlp,libero_10,10,10,520
+Ablation W4A4 g=8 (expert_attn),ablation,INT4,INT4,FP16,8,1,0,85.0,-15.0,-,expert_attn,libero_10,10,10,520
+Ablation W4A4 g=8 (expert_mlp),ablation,INT4,INT4,FP16,8,1,0,86.0,-14.0,-,expert_mlp,libero_10,10,10,520
+Ablation W4A4 g=8 (llm_only),ablation,INT4,INT4,FP16,8,1,0,0.0,-100.0,-,llm_only,libero_10,10,10,520
+INT4 QAD g=8 FP16 scale,QAD,INT4,FP16,FP16,8,1,500,97.0,-3.0,0.005241,full,libero_10,10,10,520
+INT4 QAD g=8 INT16 scale,QAD,INT4,FP16,INT16,8,1,500,92.0,-8.0,0.003626,full,libero_10,10,10,520
+INT4 QAD g=16 FP16 scale,QAD,INT4,FP16,FP16,16,1,500,86.0,-14.0,0.009405,full,libero_10,10,10,520
+INT4 QAD g=16 INT16 scale,QAD,INT4,FP16,INT16,16,1,500,85.0,-15.0,0.009319,full,libero_10,10,10,520
+NVFP4 QAD b=8,QAD,E2M1 (FP4),FP16,FP8 E4M3,8,1,500,79.0,-21.0,0.009139,full,libero_10,10,10,520
+W4A4 QAD g=8 (DiT only),QAD,INT4,INT4,FP16,8,1,500,93.0,-7.0,0.013284,expert_only,libero_10,10,10,520
+W4A4 LLM QAD g=8 Phase1,sequential_qad,INT4,INT4,FP16,8,1,500,0.0,-100.0,0.083677,llm_only,libero_10,10,10,520
+W4A4 LLM+DiT QAD g=8 Phase2,sequential_qad,INT4,INT4,FP16,8,1,500,0.0,-100.0,0.075764,full,libero_10,10,10,520
+QuantVLA W4A8 LLM + W4A4 DiT QAD (awq_lite v1),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,1.0,-99.0,-,full,libero_10,10,10,520
+QuantVLA W4A8 LLM + W4A4 DiT QAD (max v2),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,4.0,-96.0,-,full,libero_10,10,10,520
+Stage9 v3 Independent calib (DiT disabled),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,0.0,-100.0,-,full,libero_10,10,10,520
+Stage9 v4 Preload calib (QAD-DiT before max),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,7.0,-93.0,-,full,libero_10,10,10,520
+Stage9 v5 FP8 block-wise act b=32 (vision_tower amax bug),combined,INT4(W4A8)+INT4(W4A4),FP8block32(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,0.0,-100.0,-,full,libero_10,10,10,520
+Stage10 W4A16 LLM (g=4) + W4A4 DiT QAD (g=8),combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,90.0,-10.0,0.013014,full,libero_10,10,10,520
+FP16 baseline libero_spatial,baseline,FP16,FP16,-,-,1,0,98.0,0.0,-,full,libero_spatial,50,10,280
+FP16 baseline libero_object,baseline,FP16,FP16,-,-,1,0,98.8,0.0,-,full,libero_object,50,10,280
+FP16 baseline libero_goal,baseline,FP16,FP16,-,-,1,0,TBD,0.0,-,full,libero_goal,50,10,300
+Stage10 libero_spatial,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,97.0,-1.0,0.013014,full,libero_spatial,50,10,280
+Stage10 libero_object,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,98.8,0.0,0.013014,full,libero_object,50,10,280
+Stage10 libero_goal,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,TBD,TBD,0.013014,full,libero_goal,50,10,300

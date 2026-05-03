@@ -537,3 +537,64 @@ Per-task:
 **버그 수정 (smoke test 중 발견)**:
 - `_verify_amax` 패치 버그: `torch.ones(1)` → `torch.ones_like(amax)` (block-wise shape 보존)
 - `load_state_dict` 크기 불일치: shape-mismatch key 필터 추가 (안전망)
+
+---
+
+## Multi-suite Generalization Benchmark
+
+**목표**: Stage10 모델 (libero_10 calibration/QAD)이 다른 suite에서도 일반화되는지 측정.  
+**전략**: 기존 `best_student.pt` 재사용 — suite별 재훈련 없이 cross-suite eval.  
+**조건**: 50 ep/task × 10 tasks = 500 episodes/suite, NFE=1, n_envs=10
+
+### 공통 환경 설정
+
+| 항목 | 값 |
+|------|-----|
+| Robot | Franka Panda (7-DOF) |
+| Control mode | relative (delta EE pos+ori) |
+| Action dim | 7 (Δxyz + Δrpy + gripper) |
+| n_action_steps | 10 (action chunking) |
+| Observation | 2-cam RGB 256×256 + proprioception |
+| NFE | 1 (single-step denoising) |
+| Episodes/task | 50 |
+| n_envs | 10 (parallel) |
+
+### Suite별 설정
+
+| Suite | Tasks | Max steps | Longest demo | 특징 |
+|-------|-------|-----------|--------------|------|
+| libero_spatial | 10 | 280 | 193 | 공간 위치 변형 |
+| libero_object | 10 | 280 | 254 | 물체 종류 변형 |
+| libero_goal | 10 | 300 | 270 | 목표 상태 변형 |
+| libero_10 | 10 | 520 | 505 | long-horizon 복합 |
+
+### 결과 (진행 중)
+
+| Suite | FP16 (50ep) | Stage10 (50ep) | Δ |
+|-------|-------------|----------------|---|
+| **libero_10** (10ep 기준) | 100.0% | 90.0% | -10.0%p |
+| **libero_spatial** | **98.0%** ✅ | **97.0%** ✅ | **-1.0%p** |
+| **libero_object** | **98.8%** ✅ | **98.8%** ✅ | **0.0%p** |
+| **libero_goal** | 진행중 (2/10) | 진행중 (1/10) | TBD |
+
+#### libero_spatial 세부 결과 (500 episodes, 확정)
+
+| Task | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | **평균** |
+|------|---|---|---|---|---|---|---|---|---|---|---------|
+| FP16 | 100% | 100% | 100% | 96% | 94% | 94% | 100% | 100% | 100% | 96% | **98.0%** |
+| Stage10 | 100% | 100% | 100% | 98% | **82%** | 98% | 96% | 98% | 98% | 100% | **97.0%** |
+| Δ | 0 | 0 | 0 | +2 | -12 | +4 | -4 | -2 | -2 | +4 | **-1.0%p** |
+
+> Task 4에서 82% (-12%p)가 유일한 약점. 나머지 9개 task는 96~100%.  
+> libero_10 calibration/QAD로 훈련한 모델이 spatial suite에서 거의 완벽하게 일반화.
+
+#### libero_object 세부 결과 (500 episodes each, 확정)
+
+| Task | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | **평균** |
+|------|---|---|---|---|---|---|---|---|---|---|---------|
+| FP16 | 100% | 100% | 100% | 98% | 100% | 100% | 100% | 90% | 100% | 100% | **98.8%** |
+| Stage10 | 100% | 100% | 100% | 100% | 100% | 94% | 100% | 96% | 100% | 98% | **98.8%** |
+| Δ | 0 | 0 | 0 | +2 | 0 | -6 | 0 | +6 | 0 | -2 | **0.0%p** |
+
+> FP16 대비 quantization drop 없음 (98.8% = 98.8%). Task 5/7에서 소폭 교환.  
+> libero_object suite에서 Stage10 완전 무손실 일반화.

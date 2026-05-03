@@ -1,0 +1,17 @@
+항목,값,비고
+robot,Franka Panda,7-DOF
+control_mode,relative,delta EE position + orientation
+action_dim,7,Δxyz(3) + Δrpy(3) + gripper(1)
+n_action_steps,10,한 번 추론 후 10 step 연속 실행 (action chunking)
+observation_rgb,2 cameras 256x256,agentview + robot0_eye_in_hand
+observation_proprio,joint_pos(7)+joint_vel(7)+gripper_qpos(2)+gripper_qvel(2)+ee_pos(3)+ee_quat(4),총 25 dim
+language_input,자연어 task instruction,LLM (PaliGemma 2.9B) 처리
+renderer,MuJoCo EGL,headless GPU offscreen rendering
+nfe_original,10,원본 pi0.5 flow-matching 10-step DDIM
+nfe_current_exp,1,single-step denoising (10x 속도 향상)
+ep_per_task_original,10,Stage 0~10 libero_10 실험
+ep_per_task_multisuite,50,multisuite spatial/object/goal 실험
+n_envs,10,병렬 환경 수 (모든 실험 동일)
+model_llm,PaliGemma 2.9B,vision-language model
+model_dit,Gemma 300M (gemma_expert),action diffusion expert
+qad_calibration_data,libero_10,모든 Stage10 multisuite도 동일 calibration 재사용
