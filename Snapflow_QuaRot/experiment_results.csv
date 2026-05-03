@@ -23,4 +23,8 @@ W4A4 QAD g=8 (DiT only),QAD,INT4,INT4,FP16,8,1,500,93.0,-7.0,0.013284,expert_onl
 W4A4 LLM QAD g=8 Phase1,sequential_qad,INT4,INT4,FP16,8,1,500,0.0,-100.0,0.083677,llm_only
 W4A4 LLM+DiT QAD g=8 Phase2,sequential_qad,INT4,INT4,FP16,8,1,500,0.0,-100.0,0.075764,full
 QuantVLA W4A8 LLM + W4A4 DiT QAD (awq_lite v1),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,1.0,-99.0,-,full
-QuantVLA W4A8 LLM + W4A4 DiT QAD (max v2),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,TBD,TBD,-,full
+QuantVLA W4A8 LLM + W4A4 DiT QAD (max v2),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,4.0,-96.0,-,full
+Stage9 v3 Independent calib (DiT disabled),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,0.0,-100.0,-,full
+Stage9 v4 Preload calib (QAD-DiT before max),combined,INT4(W4A8)+INT4(W4A4),FP8(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,7.0,-93.0,-,full
+Stage9 v5 FP8 block-wise act b=32 (vision_tower amax bug),combined,INT4(W4A8)+INT4(W4A4),FP8block32(W4A8)+INT4(W4A4),FP8E4M3+FP16,128(LLM)+8(DiT),1,0,0.0,-100.0,-,full
+Stage10 W4A16 LLM (g=4) + W4A4 DiT QAD (g=8),combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,90.0,-10.0,0.013014,full

@@ -414,9 +414,126 @@ Per-task (awq_lite):
 3. 합성 calib 후 stage8f checkpoint 로드 → DiT amax 복원, LLM amax 유지
 4. DiT amax 보존 검증 추가
 
-### 결과 v2 (max calib — 진행 예정)
+### 결과 v2 (max calib, 1-pass combined)
 
 | 항목 | 값 |
 |------|-----|
-| pc_success | **TBD** |
-| 예상 범위 | 70~93% (max calib만으로도 W4A8은 W4A4 대비 훨씬 안전) |
+| LLM 양자화 | W4A8 (INT4-blockwise128 + FP8 E4M3, max calib) |
+| DiT 양자화 | W4A4 g=8 (stage8f checkpoint 재로드로 amax 복원) |
+| pc_success | **4.0%** |
+| Path A 대비 | -96%p |
+
+Per-task (max calib v2):
+| Task | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|------|---|---|---|---|---|---|---|---|---|---|
+| 성공률 | 0% | 0% | 0% | 0% | 0% | 40% | 0% | 0% | 0% | 0% |
+
+**분석**: awq_lite 버그는 수정됐으나 여전히 매우 낮은 성능. 원인:
+- **per-tensor FP8 activation**: LLM outlier가 tensor 전체의 scale을 지배 → 대부분 토큰 심각한 quantization 오차
+- **calibration 분포 mismatch**: LLM amax가 FP16 DiT 분포 기준으로 calibrated → 실제 inference에서 QAD-trained DiT 사용 시 불일치
+
+---
+
+### Stage 9 v3 — Independent Calibration (DiT disabled)
+
+| 항목 | 값 |
+|------|-----|
+| 전략 | calibration 중 DiT quantizer enable=False (FP16 동작), 이후 enable + stage8f 재로드 |
+| pc_success | **0.0%** |
+| Path A 대비 | -100%p |
+
+**실패 원인**: modelopt에서 `enable=False` 로 quantizer 등록 시 `_amax` buffer 자체가 생성되지 않음 → 이후 `load_state_dict(strict=False)` 가 DiT amax를 채우지 못함 → DiT amax 미설정 상태로 inference → 0%
+
+---
+
+### Stage 9 v4 — Pre-load Calibration (QAD-DiT before max)
+
+| 항목 | 값 |
+|------|-----|
+| 전략 | stage8f FP16 weights 먼저 로드 → combined mtq.quantize → stage8f 재로드(DiT QAD amax 복원) |
+| pc_success | **7.0%** |
+| Path A 대비 | -93%p |
+
+Per-task (v4):
+| Task | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|------|---|---|---|---|---|---|---|---|---|---|
+| 성공률 | 0% | 0% | 0% | 0% | 20% | 50% | 0% | 0% | 0% | 0% |
+
+**개선 이유**: calibration 시 QAD DiT weights 위에서 LLM amax 계산 → inference 분포에 더 가까운 환경에서 calibrated.  
+**한계**: per-tensor FP8 activation 문제는 미해결. task 4, 5만 부분 성공.
+
+---
+
+### Stage 9 v5 — FP8 Block-wise Activation (block=32)
+
+| 항목 | 값 |
+|------|-----|
+| 전략 | v4 프로토콜 유지 + LLM/vision/proj activation을 per-tensor → block-wise FP8 (block_size=32) |
+| pc_success | **0.0%** |
+| Path A 대비 | -100%p |
+
+**실패 원인**:
+- 1차 시도: calibration `batch_size=4` vs inference `n_envs=10` → vision tower shape mismatch (`[4,3,224,224]` vs `[10,3,224,224]`) → 즉시 crash
+- `batch_size=4 → 10` 수정 후 재실행: crash는 해결됐으나 **vision_tower weight_quantizer 299개 invalid amax** (v4에서는 1개) → 패치값 1.0 사용 → vision feature 손상 → 0%
+- block-wise activation quantizer 설정이 같은 레이어의 SequentialQuantizer(weight) `_amax` 접근 방식에 영향을 준 것으로 추정
+
+---
+
+### Stage 9 전체 요약
+
+| 버전 | 전략 | 주요 변경 | pc_success |
+|------|------|----------|-----------|
+| v1 (awq_lite) | 2-pass, awq_lite | awq_lite calib | 1% |
+| v2 (max calib) | 1-pass combined, max | awq_lite → max | 4% |
+| v3 (DiT disabled) | LLM-only calib | DiT enable=False | 0% |
+| **v4 (pre-load)** | QAD weights before calib | stage8f 선로드 | **7%** |
+| v5 (block-wise FP8) | block=32 activation | a_fp8 block-wise | 0% |
+
+**현재 최고**: v4 7% — 여전히 목표 대비 크게 미달.  
+**근본 문제**: LLM W4A8의 per-tensor FP8 activation이 outlier 처리에 취약. AWQ weight transformation 없이는 W4A8 LLM 성능 한계.
+
+**다음 단계**: → Stage 10 (W4A16 LLM + W4A4 DiT QAD) 로 진행
+
+---
+
+## Stage 10 — W4A16 LLM + W4A4 DiT QAD
+
+**목표**: LLM W4A8의 FP8 activation 문제를 우회 — LLM은 weight-only (W4A16), DiT는 W4A4 QAD 재훈련.
+
+**핵심 아이디어**: 
+- W4A16 LLM ablation: 78% (PTQ, DiT QAD 없음)
+- W4A4 DiT QAD (FP16 LLM): 93%
+- FP16 LLM → W4A16 LLM으로 바꾸면 DiT 입력 분포가 약간 변함 → DiT를 W4A16 LLM 기준으로 재훈련하면 회복 가능
+
+**프로토콜**:
+1. FP16 policy 로드
+2. Combined mtq.quantize (W4A16 LLM g=4 + W4A4 DiT g=8, max calib)
+3. stage8f best_student.pt 로드 (warm-start, strict=False + shape-mismatch 필터)
+4. QAD training 500 steps (DiT만, LLM frozen)
+5. LIBERO-10 eval
+
+### 결과
+
+| 항목 | 값 |
+|------|-----|
+| LLM | W4A16 (g=4), weight-only |
+| DiT | W4A4 (g=8), QAD 500 steps |
+| init_ckpt | stage8f best_student.pt (warm-start) |
+| best_loss (QAD) | 0.013014 |
+| pc_success | **90.0%** |
+| Path A 대비 | **-10%p** |
+
+Per-task:
+| Task | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|------|---|---|---|---|---|---|---|---|---|---|
+| 성공률 | 100% | 100% | 100% | 90% | 100% | 100% | 90% | 100% | 60% | 60% |
+
+**개선 분석**:
+- W4A16 LLM PTQ 78% → QAD 재훈련 후 90% (+12%p)
+- FP16 LLM + DiT QAD 93% 대비 -3%p (W4A16 LLM으로 인한 소폭 하락)
+- W4A8 LLM + DiT QAD 최고 7% 대비 +83%p (FP8 activation 제거의 효과)
+- Task 8, 9에서 60% — 가장 어려운 task에서 일부 실패
+
+**버그 수정 (smoke test 중 발견)**:
+- `_verify_amax` 패치 버그: `torch.ones(1)` → `torch.ones_like(amax)` (block-wise shape 보존)
+- `load_state_dict` 크기 불일치: shape-mismatch key 필터 추가 (안전망)
