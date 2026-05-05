@@ -13,10 +13,13 @@ from transformers.image_processing_utils import (
 )
 from transformers.image_processing_utils_fast import (
     BaseImageProcessorFast,
-    ImagesKwargs,
     group_images_by_shape,
     reorder_images,
 )
+try:
+    from transformers.image_processing_utils_fast import ImagesKwargs
+except ImportError:
+    from transformers.image_processing_utils_fast import DefaultFastImageProcessorKwargs as ImagesKwargs
 from transformers.image_utils import (
     IMAGENET_STANDARD_MEAN,  # 0.5, 0.5, 0.5
     IMAGENET_STANDARD_STD,  # 0.5, 0.5, 0.5

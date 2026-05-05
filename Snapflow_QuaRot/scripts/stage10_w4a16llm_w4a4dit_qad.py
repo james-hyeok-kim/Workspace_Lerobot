@@ -73,31 +73,31 @@ DEVICE = "cuda"
 
 # ── quantization config ───────────────────────────────────────────────────────
 
-def _build_combined_config(llm_group_size: int = 4, dit_group_size: int = 8) -> dict:
-    """W4A16 LLM + W4A4 DiT combined config.
+def _build_combined_config(llm_group_size: int = 4, dit_group_size: int = 8, llm_weight_bits: int = 4, dit_act_bits: int = 4) -> dict:
+    """WNA16 LLM + W4A{dit_act_bits} DiT combined config.
 
     주의: SequentialQuantizer 버그(v5 vision_tower 299 invalid) 방지 위해
     모든 entry는 단일 dict (list 사용 금지).
     """
-    # LLM: weight INT4 blockwise, activation disabled
-    w4_llm = {"num_bits": 4, "block_sizes": {-1: llm_group_size}, "enable": True}
-    # DiT: W4A4 per-tensor activation
-    w4_dit = {"num_bits": 4, "block_sizes": {-1: dit_group_size}, "enable": True}
-    a4_dit = {"num_bits": 4, "enable": True}
-    fp16   = {"enable": False}
+    # LLM: weight INT{llm_weight_bits} blockwise, activation disabled
+    w4_llm  = {"num_bits": llm_weight_bits, "block_sizes": {-1: llm_group_size}, "enable": True}
+    # DiT: W4 group-wise weight, A{dit_act_bits} per-tensor activation
+    w4_dit  = {"num_bits": 4, "block_sizes": {-1: dit_group_size}, "enable": True}
+    act_dit = {"num_bits": dit_act_bits, "enable": True}
+    fp16    = {"enable": False}
 
     return {
         "quant_cfg": {
-            # LLM W4A16: weight only
+            # LLM WNA16: weight only
             "*language_model*weight_quantizer":          w4_llm,
             "*vision_tower*weight_quantizer":            w4_llm,
             "*multi_modal_projector*weight_quantizer":   w4_llm,
             "*language_model*input_quantizer":           fp16,
             "*vision_tower*input_quantizer":             fp16,
             "*multi_modal_projector*input_quantizer":    fp16,
-            # DiT W4A4
+            # DiT W4A{dit_act_bits}
             "*gemma_expert*weight_quantizer":            w4_dit,
-            "*gemma_expert*input_quantizer":             a4_dit,
+            "*gemma_expert*input_quantizer":             act_dit,
             # 항상 FP16
             "*lm_head*":                                 fp16,
             "*[kv]_bmm_quantizer":                       fp16,
@@ -107,21 +107,38 @@ def _build_combined_config(llm_group_size: int = 4, dit_group_size: int = 8) -> 
     }
 
 
-def _build_llm_only_config(llm_group_size: int = 4) -> dict:
-    """W4A16 LLM only — DiT stays FP16 (no gemma_expert entries)."""
-    w4_llm = {"num_bits": 4, "block_sizes": {-1: llm_group_size}, "enable": True}
+def _build_llm_only_config(llm_group_size: int = 4, weight_bits: int = 4) -> dict:
+    """WNA16 LLM only — DiT stays FP16 (no gemma_expert entries)."""
+    w_llm = {"num_bits": weight_bits, "block_sizes": {-1: llm_group_size}, "enable": True}
     fp16   = {"enable": False}
     return {
         "quant_cfg": {
-            "*language_model*weight_quantizer":          w4_llm,
-            "*vision_tower*weight_quantizer":            w4_llm,
-            "*multi_modal_projector*weight_quantizer":   w4_llm,
+            "*language_model*weight_quantizer":          w_llm,
+            "*vision_tower*weight_quantizer":            w_llm,
+            "*multi_modal_projector*weight_quantizer":   w_llm,
             "*language_model*input_quantizer":           fp16,
             "*vision_tower*input_quantizer":             fp16,
             "*multi_modal_projector*input_quantizer":    fp16,
             "*lm_head*":                                 fp16,
             "*[kv]_bmm_quantizer":                       fp16,
             "default":                                   fp16,
+        },
+        "algorithm": "max",
+    }
+
+
+def _build_dit_only_config(dit_group_size: int = 8, dit_act_bits: int = 4) -> dict:
+    """W4A{dit_act_bits} DiT only — LLM stays FP16."""
+    w4_dit  = {"num_bits": 4, "block_sizes": {-1: dit_group_size}, "enable": True}
+    act_dit = {"num_bits": dit_act_bits, "enable": True}
+    fp16    = {"enable": False}
+    return {
+        "quant_cfg": {
+            "*gemma_expert*weight_quantizer": w4_dit,
+            "*gemma_expert*input_quantizer":  act_dit,
+            "*lm_head*":                      fp16,
+            "*[kv]_bmm_quantizer":            fp16,
+            "default":                        fp16,
         },
         "algorithm": "max",
     }
@@ -342,6 +359,8 @@ def main():
     parser.add_argument("--train_batch_size", type=int, default=4)
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--num_inference_steps", type=int, default=1)
+    parser.add_argument("--n_action_steps", type=int, default=10,
+                        help="Action steps per policy call (model default: 50)")
     parser.add_argument("--output_dir", default="results/stage10_w4a16llm_w4a4dit")
     parser.add_argument("--smoke", action="store_true",
                         help="smoke test: 20 steps, task 0-1 × 2 ep, amax 검증만")
@@ -351,9 +370,15 @@ def main():
     parser.add_argument("--suite", default="libero_10",
                         help="LIBERO suite: libero_10 / libero_spatial / libero_object / libero_goal")
     parser.add_argument("--llm_only", action="store_true",
-                        help="W4A16 PTQ on LLM only — DiT stays FP16, no QAD")
+                        help="WNA16 PTQ on LLM only — DiT stays FP16, no QAD")
+    parser.add_argument("--llm_weight_bits", type=int, default=4,
+                        help="LLM weight quantization bits (default: 4, use 8 for W8A16)")
+    parser.add_argument("--dit_act_bits", type=int, default=4,
+                        help="DiT activation quantization bits (default: 4, use 8 for W4A8)")
     parser.add_argument("--fp16_only", action="store_true",
                         help="FP16 baseline mode — skip quantization, eval Path A directly")
+    parser.add_argument("--dit_only", action="store_true",
+                        help="FP16 LLM + W4A{dit_act_bits} DiT QAD — load checkpoint via --skip_train_ckpt")
     parser.add_argument("--n_envs", type=int, default=None,
                         help="Override n_envs (default = eval_episodes)")
     parser.add_argument("--device", default=DEVICE)
@@ -380,7 +405,7 @@ def main():
     policy_cfg.use_amp               = False
     policy_cfg.compile_model         = False
     policy_cfg.gradient_checkpointing = False
-    policy_cfg.n_action_steps        = 10
+    policy_cfg.n_action_steps        = args.n_action_steps
     policy_cfg.num_inference_steps   = args.num_inference_steps
 
     n_envs = args.n_envs if args.n_envs is not None else args.eval_episodes
@@ -400,19 +425,31 @@ def main():
         print("[INFO] fp16_only mode — skipping quantization, evaluating FP16 directly")
 
     elif args.llm_only:
-        # LLM-only W4A16 PTQ: quantize LLM, DiT stays FP16, no QAD
-        cfg = _build_llm_only_config(args.llm_group_size)
+        # LLM-only WNA16 PTQ: quantize LLM, DiT stays FP16, no QAD
+        cfg = _build_llm_only_config(args.llm_group_size, args.llm_weight_bits)
         calib_loop = _make_calib_loop(args.device, args.calib_batches)
         mtq.quantize(student, cfg, forward_loop=calib_loop)
         _verify_amax(student, out_dir)
         best_loss = float("nan")
-        print(f"[INFO] llm_only mode — W4A16 LLM (g={args.llm_group_size}), DiT FP16")
+        print(f"[INFO] llm_only mode — W{args.llm_weight_bits}A16 LLM (g={args.llm_group_size}), DiT FP16")
+
+    elif args.dit_only:
+        # DiT-only W4A{dit_act_bits} QAD: LLM stays FP16, load pre-trained DiT checkpoint
+        cfg = _build_dit_only_config(args.dit_group_size, args.dit_act_bits)
+        calib_loop = _make_calib_loop(args.device, args.calib_batches)
+        mtq.quantize(student, cfg, forward_loop=calib_loop)
+        _verify_amax(student, out_dir)
+        best_ckpt_path = Path(args.skip_train_ckpt) if args.skip_train_ckpt else Path("results/stage8f_w4a4_g8/best_student.pt")
+        best_sd = torch.load(best_ckpt_path, map_location="cpu")
+        student.load_state_dict(best_sd, strict=False)
+        best_loss = float("nan")
+        print(f"[INFO] dit_only mode — FP16 LLM + W4A{args.dit_act_bits} DiT (g={args.dit_group_size}), loaded {best_ckpt_path}")
 
     elif not args.skip_train:
         # ── [Step 2] Combined quantization + max calib ────────────────────
-        print(f"[Step 2] Combined quant: W4A16 LLM (g={args.llm_group_size}) + "
-              f"W4A4 DiT (g={args.dit_group_size}), max calib ...")
-        cfg = _build_combined_config(args.llm_group_size, args.dit_group_size)
+        print(f"[Step 2] Combined quant: W{args.llm_weight_bits}A16 LLM (g={args.llm_group_size}) + "
+              f"W4A{args.dit_act_bits} DiT (g={args.dit_group_size}), max calib ...")
+        cfg = _build_combined_config(args.llm_group_size, args.dit_group_size, args.llm_weight_bits, args.dit_act_bits)
         calib_loop = _make_calib_loop(args.device, args.calib_batches)
         mtq.quantize(student, cfg, forward_loop=calib_loop)
         print(f"[Step 2] Done.")
@@ -462,8 +499,8 @@ def main():
         _reset_dynamo(student)
         student.to(args.device)
 
-        print(f"\n[INFO] QAD: W4A16 LLM (g={args.llm_group_size}) + "
-              f"W4A4 DiT (g={args.dit_group_size}) | steps={args.n_steps} | lr={args.lr}")
+        print(f"\n[INFO] QAD: W{args.llm_weight_bits}A16 LLM (g={args.llm_group_size}) + "
+              f"W4A{args.dit_act_bits} DiT (g={args.dit_group_size}) | steps={args.n_steps} | lr={args.lr}")
         best_ckpt, best_loss = _qad_train(
             student=student,
             teacher=teacher,
@@ -482,7 +519,7 @@ def main():
         best_ckpt = Path(args.skip_train_ckpt) if args.skip_train_ckpt else out_dir / "best_student.pt"
         best_loss = float("nan")
         print(f"[INFO] skip_train: applying quant and loading {best_ckpt}")
-        cfg = _build_combined_config(args.llm_group_size, args.dit_group_size)
+        cfg = _build_combined_config(args.llm_group_size, args.dit_group_size, args.llm_weight_bits, args.dit_act_bits)
         calib_loop = _make_calib_loop(args.device, args.calib_batches)
         mtq.quantize(student, cfg, forward_loop=calib_loop)
         _verify_amax(student, out_dir)
@@ -531,16 +568,20 @@ def main():
     if args.fp16_only:
         mode_tag = "fp16"
     elif args.llm_only:
-        mode_tag = f"llm_only_g{args.llm_group_size}"
+        mode_tag = f"llm_only_w{args.llm_weight_bits}g{args.llm_group_size}"
+    elif args.dit_only:
+        mode_tag = f"fp16llm_w4a{args.dit_act_bits}dit_g{args.dit_group_size}_qad"
     else:
-        mode_tag = "stage10"
+        mode_tag = f"w{args.llm_weight_bits}a16llm_g{args.llm_group_size}_w4a{args.dit_act_bits}dit_qad"
     print(f"\n{'='*60}")
     if args.fp16_only:
         print(f"[FP16 Baseline] suite={args.suite}")
     elif args.llm_only:
-        print(f"[LLM-only PTQ] W4A16 LLM (g={args.llm_group_size}), DiT FP16 | suite={args.suite}")
+        print(f"[LLM-only PTQ] W{args.llm_weight_bits}A16 LLM (g={args.llm_group_size}), DiT FP16 | suite={args.suite}")
+    elif args.dit_only:
+        print(f"[DiT-only QAD] FP16 LLM + W4A{args.dit_act_bits} DiT (g={args.dit_group_size}) | suite={args.suite}")
     else:
-        print(f"[Stage10] W4A16 LLM (g={args.llm_group_size}) + W4A4 DiT (g={args.dit_group_size}) | suite={args.suite}")
+        print(f"[Stage10] W{args.llm_weight_bits}A16 LLM (g={args.llm_group_size}) + W4A{args.dit_act_bits} DiT (g={args.dit_group_size}) | suite={args.suite}")
         if not (args.skip_train or math.isnan(best_loss)):
             print(f"  best_loss (QAD):  {best_loss:.6f}")
     print(f"  pc_success:       {pc:.1f}%")
@@ -555,16 +596,19 @@ def main():
             print(f"  task {t['task_id']:2d}: {pct:5.1f}%  fails={fails}")
 
     result = {
-        "stage": "fp16_baseline" if args.fp16_only else ("llm_only_ptq" if args.llm_only else "stage10_w4a16llm_w4a4dit_qad"),
+        "stage": ("fp16_baseline" if args.fp16_only else
+                  ("llm_only_ptq" if args.llm_only else
+                  ("fp16llm_dit_only_w4a4_qad" if args.dit_only else
+                   "stage10_w4a16llm_w4a4dit_qad"))),
         "suite": args.suite,
         "mode": mode_tag,
-        "llm_quant": "FP16" if args.fp16_only else f"W4A16 INT4 blockwise-{args.llm_group_size}",
-        "dit_quant": "FP16" if (args.fp16_only or args.llm_only) else f"W4A4 g={args.dit_group_size} QAD",
-        "init_ckpt": None if (args.fp16_only or args.llm_only) else args.init_ckpt,
-        "n_steps": 0 if (args.fp16_only or args.llm_only) else args.n_steps,
+        "llm_quant": "FP16" if (args.fp16_only or args.dit_only) else f"W{args.llm_weight_bits}A16 INT{args.llm_weight_bits} blockwise-{args.llm_group_size}",
+        "dit_quant": "FP16" if (args.fp16_only or args.llm_only) else f"W4A{args.dit_act_bits} g={args.dit_group_size} QAD",
+        "init_ckpt": None if (args.fp16_only or args.llm_only) else (str(args.skip_train_ckpt) if args.dit_only else args.init_ckpt),
+        "n_steps": 0 if (args.fp16_only or args.llm_only or args.dit_only) else args.n_steps,
         "best_loss": best_loss,
         "num_inference_steps": args.num_inference_steps,
-        "n_action_steps": 10,
+        "n_action_steps": args.n_action_steps,
         "overall": overall,
         "eval_info": eval_info,
     }

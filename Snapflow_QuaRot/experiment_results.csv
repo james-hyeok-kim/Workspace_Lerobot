@@ -30,7 +30,22 @@ Stage9 v5 FP8 block-wise act b=32 (vision_tower amax bug),combined,INT4(W4A8)+IN
 Stage10 W4A16 LLM (g=4) + W4A4 DiT QAD (g=8),combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,90.0,-10.0,0.013014,full,libero_10,10,10,520
 FP16 baseline libero_spatial,baseline,FP16,FP16,-,-,1,0,98.0,0.0,-,full,libero_spatial,50,10,280
 FP16 baseline libero_object,baseline,FP16,FP16,-,-,1,0,98.8,0.0,-,full,libero_object,50,10,280
-FP16 baseline libero_goal,baseline,FP16,FP16,-,-,1,0,TBD,0.0,-,full,libero_goal,50,10,300
+FP16 baseline libero_goal,baseline,FP16,FP16,-,-,1,0,88.2,0.0,-,full,libero_goal,50,10,300
 Stage10 libero_spatial,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,97.0,-1.0,0.013014,full,libero_spatial,50,10,280
 Stage10 libero_object,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,98.8,0.0,0.013014,full,libero_object,50,10,280
-Stage10 libero_goal,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,TBD,TBD,0.013014,full,libero_goal,50,10,300
+Stage10 libero_goal,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,81.6,-6.6,0.013014,full,libero_goal,50,10,300
+Stage10 libero_10 50ep,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT4,FP16+FP16,4(LLM)+8(DiT),1,500,87.6,-12.4,0.013014,full,libero_10,50,10,520
+Ablation W4A16 g=8 (llm_only),ablation,INT4,FP16,FP16,8,1,0,68.0,-32.0,-,llm_only,libero_10,10,10,520
+Ablation W4A16 g=16 (llm_only),ablation,INT4,FP16,FP16,16,1,0,42.0,-58.0,-,llm_only,libero_10,10,10,520
+FP16 NFE=10 libero_object,baseline,FP16,FP16,-,-,10,0,100.0,1.2,-,full,libero_object,50,10,280
+FP16 NFE=10 libero_goal,baseline,FP16,FP16,-,-,10,0,96.2,0.0,-,full,libero_goal,50,10,300
+FP16 NFE=10 libero_spatial,baseline,FP16,FP16,-,-,10,0,96.4,0.0,-,full,libero_spatial,50,10,280
+FP16 NFE=10 libero_10,baseline,FP16,FP16,-,-,10,0,93.2,-6.8,-,full,libero_10,50,10,520
+W4A16 LLM+W4A8 DiT QAD libero_10,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT8,FP16+FP16,4(LLM)+8(DiT),1,500,90.6,-9.4,0.002724,full,libero_10,50,10,520
+W8A16 LLM+W4A8 DiT QAD libero_10,combined_qad,INT4(W8A16)+INT4(W4A4),FP16+INT8,FP16+FP16,16(LLM)+8(DiT),1,500,89.8,-10.2,0.000912,full,libero_10,50,10,520
+W4A16 LLM+W4A8 DiT QAD libero_object,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT8,FP16+FP16,4(LLM)+8(DiT),1,500,99.4,0.6,0.002724,full,libero_object,50,10,280
+W4A16 LLM+W4A8 DiT QAD libero_spatial,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT8,FP16+FP16,4(LLM)+8(DiT),1,500,97.6,-0.4,0.002724,full,libero_spatial,50,10,280
+W4A16 LLM+W4A8 DiT QAD libero_goal,combined_qad,INT4(W4A16)+INT4(W4A4),FP16+INT8,FP16+FP16,4(LLM)+8(DiT),1,500,89.2,1.0,0.002724,full,libero_goal,50,10,300
+W8A16 LLM+W4A8 DiT QAD libero_object,combined_qad,INT4(W8A16)+INT4(W4A4),FP16+INT8,FP16+FP16,16(LLM)+8(DiT),1,500,99.4,0.6,0.000912,full,libero_object,50,10,280
+W8A16 LLM+W4A8 DiT QAD libero_spatial,combined_qad,INT4(W8A16)+INT4(W4A4),FP16+INT8,FP16+FP16,16(LLM)+8(DiT),1,500,99.0,1.0,0.000912,full,libero_spatial,50,10,280
+W8A16 LLM+W4A8 DiT QAD libero_goal,combined_qad,INT4(W8A16)+INT4(W4A4),FP16+INT8,FP16+FP16,16(LLM)+8(DiT),1,500,91.8,3.6,0.000912,full,libero_goal,50,10,300
